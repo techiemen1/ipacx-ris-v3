@@ -4,7 +4,8 @@ import { Routes, Route, Link, useLocation } from "react-router-dom";
 import DoctorDashboardV3 from "./pages/DoctorDashboardV3";
 import AdminDashboardV3 from "./pages/AdminDashboardV3";
 import MobileLiteViewerV3 from "./pages/MobileLiteViewerV3";
-import { Activity, ShieldCheck, Smartphone, Layers } from "lucide-react";
+import PatientRegistrationV3 from "./pages/PatientRegistrationV3";
+import { Activity, ShieldCheck, Smartphone, UserPlus } from "lucide-react";
 
 const NavigationBar = () => {
   const location = useLocation();
@@ -34,6 +35,17 @@ const NavigationBar = () => {
           }`}
         >
           <Activity size={14} /> Doctor Worklist
+        </Link>
+
+        <Link
+          to="/patient-registration"
+          className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${
+            location.pathname === "/patient-registration"
+              ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
+              : "bg-slate-950 text-slate-400 hover:text-white"
+          }`}
+        >
+          <UserPlus size={14} /> EHR Registration & MWL
         </Link>
 
         <Link
@@ -69,6 +81,7 @@ const App = () => {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<DoctorDashboardV3 />} />
+          <Route path="/patient-registration" element={<PatientRegistrationV3 />} />
           <Route path="/admin" element={<AdminDashboardV3 />} />
           <Route path="/v3/lite" element={<MobileLiteViewerV3 />} />
         </Routes>
