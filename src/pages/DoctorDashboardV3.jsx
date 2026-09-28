@@ -21,7 +21,10 @@ import {
   ChevronRight,
   SlidersHorizontal,
   X,
-  Database
+  Database,
+  ExternalLink,
+  LayoutGrid,
+  List
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import DiagnosticWorkstationV3 from "../components/DoctorWorkstation/DiagnosticWorkstationV3";
@@ -33,6 +36,7 @@ const DoctorDashboardV3 = () => {
   const [modalityFilter, setModalityFilter] = useState("ALL");
   const [statusTab, setStatusTab] = useState("ALL");
   const [dateFilter, setDateFilter] = useState("ALL"); // "ALL" | "TODAY" | "YESTERDAY" | "THIS_WEEK" | "THIS_MONTH"
+  const [viewMode, setViewMode] = useState(typeof window !== "undefined" && window.innerWidth < 768 ? "CARDS" : "TABLE"); // "TABLE" | "CARDS"
   const [selectedStudy, setSelectedStudy] = useState(null);
   const [showWorkstation, setShowWorkstation] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,6 +52,22 @@ const DoctorDashboardV3 = () => {
   useEffect(() => {
     fetchStudies();
   }, []);
+
+  const getOhifViewerUrl = (study) => {
+    const saved = localStorage.getItem("ipacx_hospital_config");
+    let baseUrl = "http://192.168.1.7:8042/ohif/viewer";
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.ohifViewerUrl) baseUrl = parsed.ohifViewerUrl;
+      } catch (e) {}
+    }
+    const cleanUrl = baseUrl.trim();
+    if (cleanUrl.includes("?")) {
+      return `${cleanUrl}&StudyInstanceUID=${study.study_uid || study.id}`;
+    }
+    return `${cleanUrl}?StudyInstanceUID=${study.study_uid || study.id}`;
+  };
 
   const fetchStudies = async () => {
     setLoading(true);
@@ -244,6 +264,28 @@ const DoctorDashboardV3 = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* View Mode Switcher (Desktop Table vs Mobile Patient Cards) */}
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button
+              onClick={() => setViewMode("TABLE")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                viewMode === "TABLE" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "text-slate-400 hover:text-white"
+              }`}
+              title="Desktop Table View"
+            >
+              <List size={13} /> Table
+            </button>
+            <button
+              onClick={() => setViewMode("CARDS")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                viewMode === "CARDS" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "text-slate-400 hover:text-white"
+              }`}
+              title="Mobile Patient Cards View"
+            >
+              <LayoutGrid size={13} /> Mobile Cards
+            </button>
+          </div>
+
           {/* Date Filter Selector */}
           <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
             <Calendar size={13} className="text-cyan-400 ml-1.5" />
@@ -260,7 +302,7 @@ const DoctorDashboardV3 = () => {
             </select>
           </div>
 
-          <div className="relative flex-1 md:w-64">
+          <div className="relative flex-1 md:w-56">
             <input
               type="text"
               placeholder="Search Patient, MRN, Exam..."
@@ -287,133 +329,225 @@ const DoctorDashboardV3 = () => {
         </div>
       </div>
 
-      {/* 📊 REFINED WORKLIST TABLE */}
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl overflow-hidden shadow-2xl">
-        <table className="w-full text-left text-xs text-slate-300">
-          <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-extrabold tracking-wider border-b border-slate-800">
-            <tr>
-              <th className="px-5 py-4">Triage Priority</th>
-              <th className="px-5 py-4">Patient Information</th>
-              <th className="px-5 py-4">Modality</th>
-              <th className="px-5 py-4">Examination & Date</th>
-              <th className="px-5 py-4">Slices / Series</th>
-              <th className="px-5 py-4">AI Diagnostic Insight</th>
-              <th className="px-5 py-4">Status</th>
-              <th className="px-5 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/60 font-medium">
-            {filteredStudies.map((study) => {
-              const isToday = study.study_date && (study.study_date.includes("2026-09-28") || study.study_date.includes("TODAY"));
-              return (
-              <tr key={study.id} className={`hover:bg-slate-800/50 transition-colors group ${isToday ? "bg-cyan-950/20" : ""}`}>
-                <td className="px-5 py-4">
-                  {study.is_stat ? (
-                    <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/40 text-red-400 font-extrabold text-[10px] uppercase flex items-center gap-1 w-max">
-                      <Zap size={12} /> STAT Emergency
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800/80 text-slate-400 text-[10px] font-semibold border border-slate-700/60">
-                      ROUTINE
-                    </span>
-                  )}
-                </td>
+      {/* 📊 DESKTOP TABLE VIEW OR MOBILE PATIENT CARDS VIEW */}
+      {viewMode === "TABLE" ? (
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl overflow-hidden shadow-2xl">
+          <table className="w-full text-left text-xs text-slate-300">
+            <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-extrabold tracking-wider border-b border-slate-800">
+              <tr>
+                <th className="px-5 py-4">Triage Priority</th>
+                <th className="px-5 py-4">Patient Information</th>
+                <th className="px-5 py-4">Modality</th>
+                <th className="px-5 py-4">Examination & Date</th>
+                <th className="px-5 py-4">Slices / Series</th>
+                <th className="px-5 py-4">AI Diagnostic Insight</th>
+                <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60 font-medium">
+              {filteredStudies.map((study) => {
+                const isToday = study.study_date && (study.study_date.includes("2026-09-28") || study.study_date.includes("TODAY"));
+                return (
+                <tr key={study.id} className={`hover:bg-slate-800/50 transition-colors group ${isToday ? "bg-cyan-950/20" : ""}`}>
+                  <td className="px-5 py-4">
+                    {study.is_stat ? (
+                      <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/40 text-red-400 font-extrabold text-[10px] uppercase flex items-center gap-1 w-max">
+                        <Zap size={12} /> STAT Emergency
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full bg-slate-800/80 text-slate-400 text-[10px] font-semibold border border-slate-700/60">
+                        ROUTINE
+                      </span>
+                    )}
+                  </td>
 
-                <td className="px-5 py-4">
-                  <div className="font-extrabold text-white text-sm flex items-center gap-2 group-hover:text-cyan-400 transition-colors">
-                    <User size={14} className="text-cyan-400" /> {study.patient_name}
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                    {study.patient_mrn} • {study.patient_age} / {study.patient_sex}
-                  </div>
-                </td>
+                  <td className="px-5 py-4">
+                    <div className="font-extrabold text-white text-sm flex items-center gap-2 group-hover:text-cyan-400 transition-colors">
+                      <User size={14} className="text-cyan-400" /> {study.patient_name}
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                      {study.patient_mrn} • {study.patient_age} / {study.patient_sex}
+                    </div>
+                  </td>
 
-                <td className="px-5 py-4">
+                  <td className="px-5 py-4">
+                    <span className={`px-3 py-1 rounded-lg text-xs font-black tracking-wider ${
+                      study.modality === "MR" ? "bg-purple-500/10 text-purple-400 border border-purple-500/30" :
+                      study.modality === "CT" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30" :
+                      "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                    }`}>
+                      {study.modality}
+                    </span>
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <div className="font-bold text-slate-200 text-xs">{study.study_description}</div>
+                    <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1.5">
+                      <span>{study.study_date}</span>
+                      {isToday && (
+                        <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-extrabold border border-cyan-500/40 text-[9px] uppercase">
+                          TODAY
+                        </span>
+                      )}
+                    </div>
+                  </td>
+
+                  <td className="px-5 py-4 font-mono text-slate-400 text-xs">
+                    {study.total_instances} Slices ({study.total_series} Series)
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-1.5 text-xs text-purple-300 max-w-xs truncate">
+                      <Sparkles size={14} className="text-purple-400 shrink-0" />
+                      <span className="truncate">{study.ai_recommendation}</span>
+                    </div>
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <span className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 w-max ${
+                      study.status === "FINALIZED" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" :
+                      study.status === "DRAFT" ? "bg-amber-500/10 text-amber-400 border border-amber-500/30" :
+                      "bg-slate-800 text-slate-400 border border-slate-700"
+                    }`}>
+                      {study.status === "FINALIZED" ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+                      {study.status}
+                    </span>
+                  </td>
+
+                  {/* UNIFORM REFINED ACTION BUTTONS */}
+                  <td className="px-5 py-4 text-right space-x-1.5">
+                    <button
+                      onClick={() => { setSelectedStudy(study); setShowWorkstation(true); }}
+                      className="px-2.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl text-xs font-extrabold inline-flex items-center gap-1 shadow-md shadow-cyan-600/30 transition-all cursor-pointer"
+                      title="Open 50:50 Side-by-Side Report Studio"
+                    >
+                      <FileText size={13} /> 50:50 Studio
+                    </button>
+
+                    <a
+                      href={getOhifViewerUrl(study)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-extrabold inline-flex items-center gap-1 transition-all"
+                      title="Open in OHIF Viewer (http://192.168.1.7:8042/ohif/viewer)"
+                    >
+                      <ExternalLink size={13} /> OHIF
+                    </a>
+
+                    <a
+                      href={`/v3/lite?study=${study.study_uid}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-900 text-slate-300 border border-slate-800 rounded-xl text-xs font-semibold inline-flex items-center gap-1 transition-all"
+                      title="Open Mobile DICOM Viewer"
+                    >
+                      <Smartphone size={13} /> Mobile
+                    </a>
+                  </td>
+                </tr>
+              );
+            })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        /* 📱 MOBILE PATIENT CARDS GRID VIEW */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredStudies.map((study) => {
+            const isToday = study.study_date && (study.study_date.includes("2026-09-28") || study.study_date.includes("TODAY"));
+            return (
+              <div 
+                key={study.id} 
+                className={`p-5 rounded-2xl border transition-all flex flex-col justify-between space-y-4 shadow-2xl relative overflow-hidden ${
+                  isToday ? "bg-slate-900/95 border-cyan-500/50 shadow-cyan-500/10" : "bg-slate-900/60 border-slate-800/80 hover:border-slate-700"
+                }`}
+              >
+                {/* Header Badge */}
+                <div className="flex items-center justify-between">
                   <span className={`px-3 py-1 rounded-lg text-xs font-black tracking-wider ${
-                    study.modality === "MR" ? "bg-purple-500/10 text-purple-400 border border-purple-500/30" :
-                    study.modality === "CT" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30" :
-                    "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                    study.modality === "MR" ? "bg-purple-500/15 text-purple-300 border border-purple-500/30" :
+                    study.modality === "CT" ? "bg-cyan-500/15 text-cyan-300 border border-cyan-500/30" :
+                    "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
                   }`}>
                     {study.modality}
                   </span>
-                </td>
 
-                <td className="px-5 py-4">
-                  <div className="font-bold text-slate-200 text-xs">{study.study_description}</div>
-                  <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1.5">
-                    <span>{study.study_date}</span>
+                  <div className="flex items-center gap-2">
+                    {study.is_stat && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-400 font-black text-[10px] uppercase border border-red-500/40 flex items-center gap-1">
+                        <Zap size={10} /> STAT
+                      </span>
+                    )}
                     {isToday && (
-                      <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-extrabold border border-cyan-500/40 text-[9px] uppercase">
+                      <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-extrabold border border-cyan-500/40 text-[9px] uppercase">
                         TODAY
                       </span>
                     )}
                   </div>
-                </td>
+                </div>
 
-                <td className="px-5 py-4 font-mono text-slate-400 text-xs">
-                  {study.total_instances} Slices ({study.total_series} Series)
-                </td>
+                {/* Patient Information */}
+                <div className="space-y-1">
+                  <div className="font-extrabold text-white text-base flex items-center gap-2">
+                    <User size={16} className="text-cyan-400" /> {study.patient_name}
+                  </div>
+                  <div className="text-xs text-slate-400 font-mono flex items-center gap-2">
+                    <span className="text-cyan-400 font-bold">{study.patient_mrn}</span>
+                    <span>•</span>
+                    <span>{study.patient_age} / {study.patient_sex}</span>
+                  </div>
+                </div>
 
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-1.5 text-xs text-purple-300 max-w-xs truncate">
+                {/* Examination Description & Slices */}
+                <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
+                  <div className="text-xs font-bold text-slate-200">{study.study_description}</div>
+                  <div className="text-[10px] text-slate-400 font-mono flex items-center justify-between">
+                    <span>{study.study_date}</span>
+                    <span className="text-cyan-400">{study.total_instances} Slices ({study.total_series} Series)</span>
+                  </div>
+                </div>
+
+                {/* AI Recommendation */}
+                {study.ai_recommendation && (
+                  <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-[11px] text-purple-300 flex items-center gap-2">
                     <Sparkles size={14} className="text-purple-400 shrink-0" />
                     <span className="truncate">{study.ai_recommendation}</span>
                   </div>
-                </td>
+                )}
 
-                <td className="px-5 py-4">
-                  <span className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 w-max ${
-                    study.status === "FINALIZED" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" :
-                    study.status === "DRAFT" ? "bg-amber-500/10 text-amber-400 border border-amber-500/30" :
-                    "bg-slate-800 text-slate-400 border border-slate-700"
-                  }`}>
-                    {study.status === "FINALIZED" ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-                    {study.status}
-                  </span>
-                </td>
-
-                {/* UNIFORM REFINED ACTION BUTTONS */}
-                <td className="px-5 py-4 text-right space-x-1.5">
+                {/* Action Buttons */}
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/80">
                   <button
                     onClick={() => { setSelectedStudy(study); setShowWorkstation(true); }}
-                    className="px-2.5 py-1.5 bg-cyan-900/30 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400 rounded-xl text-xs font-extrabold inline-flex items-center gap-1 transition-all cursor-pointer"
-                    title="Open DICOM Viewer in RIS"
+                    className="px-2 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-1 shadow-md shadow-cyan-600/30 cursor-pointer"
                   >
-                    <Eye size={13} /> DICOM
-                  </button>
-
-                  <button
-                    onClick={() => { setSelectedStudy(study); setShowWorkstation(true); }}
-                    className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-extrabold inline-flex items-center gap-1 transition-all cursor-pointer"
-                    title="Open 50:50 Side-by-Side Report Studio"
-                  >
-                    <FileText size={13} /> Report (50:50)
+                    <FileText size={13} /> 50:50 Studio
                   </button>
 
                   <a
-                    href={`/advanced-report?accession=ACC-882910`}
+                    href={getOhifViewerUrl(study)}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-slate-700 rounded-xl text-xs font-extrabold inline-flex items-center gap-1 transition-all"
+                    className="px-2 py-2.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1"
                   >
-                    <FileCheck size={13} /> Print Report
+                    <ExternalLink size={13} /> OHIF
                   </a>
 
                   <a
                     href={`/v3/lite?study=${study.study_uid}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-900 text-slate-400 hover:text-white border border-slate-800 rounded-xl text-xs font-semibold inline-flex items-center gap-1 transition-all"
+                    className="px-2 py-2.5 bg-slate-950 hover:bg-slate-900 text-slate-300 border border-slate-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-1"
                   >
                     <Smartphone size={13} /> Mobile
                   </a>
-                </td>
-              </tr>
+                </div>
+              </div>
             );
           })}
-          </tbody>
-        </table>
-      </div>
+        </div>
+      )}
 
       {/* 50:50 SIDE-BY-SIDE DIAGNOSTIC WORKSTATION MODAL */}
       {showWorkstation && selectedStudy && (

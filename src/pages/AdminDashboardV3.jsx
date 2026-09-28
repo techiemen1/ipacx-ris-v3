@@ -33,6 +33,8 @@ const AdminDashboardV3 = () => {
     phone: "+91 (022) 2891-0000 | report@ipacx-imaging.com",
     gstin: "27AAAAA0000A1Z5",
     sacCode: "999312",
+    ohifViewerUrl: "http://192.168.1.7:8042/ohif/viewer",
+    preferredViewer: "50:50", // 50:50 | OHIF | MOBILE_LITE
     logoUrl: ""
   });
 
@@ -225,6 +227,42 @@ const AdminDashboardV3 = () => {
                   value={hospitalConfig.sacCode}
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-purple-400 font-mono font-bold focus:outline-none"
                 />
+              </div>
+            </div>
+
+            {/* DICOM & OHIF VIEWER CONFIGURATION */}
+            <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-3">
+              <div className="text-xs font-extrabold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
+                <Settings size={14} /> DICOM Image Viewer & OHIF Gateway Link
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">
+                    OHIF / DICOM Viewer Base URL (e.g. http://192.168.1.7:8042/ohif/viewer)
+                  </label>
+                  <input
+                    type="text"
+                    value={hospitalConfig.ohifViewerUrl || "http://192.168.1.7:8042/ohif/viewer"}
+                    onChange={(e) => setHospitalConfig({ ...hospitalConfig, ohifViewerUrl: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-cyan-400 font-mono text-xs focus:border-cyan-500 focus:outline-none"
+                    placeholder="http://192.168.1.7:8042/ohif/viewer"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">
+                    Primary Reporting Workstation Mode
+                  </label>
+                  <select
+                    value={hospitalConfig.preferredViewer || "50:50"}
+                    onChange={(e) => setHospitalConfig({ ...hospitalConfig, preferredViewer: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-bold text-xs focus:border-cyan-500 focus:outline-none"
+                  >
+                    <option value="50:50">⚡ 50:50 Side-by-Side Dual-Pane Report Studio (Recommended)</option>
+                    <option value="OHIF">🌐 External OHIF Viewer Link (http://192.168.1.7:8042/ohif/viewer)</option>
+                    <option value="MOBILE_LITE">📱 Mobile Lite Touch DICOM Viewer</option>
+                  </select>
+                </div>
               </div>
             </div>
 
