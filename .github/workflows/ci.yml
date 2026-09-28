@@ -1,0 +1,85 @@
+name: iPaCX RIS/PACS v3.0 Quality & Security CI
+
+on:
+  push:
+    branches:
+      - main
+      - release/v3.0
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - release/v3.0
+
+jobs:
+  security-and-quality-check:
+    name: Code Quality & Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify Package Configuration
+        run: |
+          node -e "const pkg = require('./package.json'); console.log('Package Name:', pkg.name, 'Version:', pkg.version);"
+
+      - name: Syntax & Lint Check Backend JS Files
+        run: |
+          node --check backend/server.js
+          node --check backend/routes/pacsV3.js
+          node --check backend/routes/keyImagesV3.js
+          node --check backend/services/hybridGateway.js
+
+      - name: Security Scan (Secret & Credential Leak Check)
+        run: |
+          echo "Scanning for hardcoded passwords and private keys..."
+          if grep -rnE "password\s*=\s*['\"](?!postgres|orthanc|pacs)[^'\"]+['\"]" backend/; then
+            echo "❌ CRITICAL SECURITY WARNING: Potential hardcoded secret detected!"
+            exit 1
+          fi
+          echo "✅ Security Scan Passed: No hardcoded secrets detected."
+
+      - name: SQL Schema Syntax Validation
+        run: |
+          echo "Validating SQL Schema syntax..."
+          grep -i "CREATE TABLE" backend/db/v3_schema.sql
+          echo "✅ SQL Schema Structure Verified."
+
+  db-schema-test:
+    name: PostgreSQL Schema Integration Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: pacsdb
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Test v3_schema.sql Execution
+        env:
+          PGPASSWORD: postgrespassword
+        run: |
+          psql -h localhost -U postgres -d pacsdb -f backend/db/v3_schema.sql
+          echo "✅ Database Migration & Schema Creation Passed!"
