@@ -24,6 +24,23 @@ router.get("/mobile-study/:studyUID", async (req, res) => {
   }
 });
 
+router.get("/study-series-instances/:studyUID", async (req, res) => {
+  try {
+    const { studyUID } = req.params;
+    const seriesList = await hybridGateway.fetchHybridSeriesAndInstances(studyUID);
+
+    res.json({
+      success: true,
+      studyUID,
+      seriesCount: seriesList.length,
+      series: seriesList
+    });
+  } catch (err) {
+    console.error("[v3 PACS API] Study series instances error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 /**
  * GET /api/v3/pacs/instance-preview/:instanceId
  * Fast Rendered JPEG/PNG Slice Buffer Preview
@@ -47,3 +64,4 @@ router.get("/instance-preview/:instanceId", async (req, res) => {
 });
 
 module.exports = router;
+

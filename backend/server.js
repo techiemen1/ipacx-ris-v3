@@ -28,6 +28,12 @@ app.use("/api/v3/auth", authV3Router);
 app.use("/api/v3/signatures", signaturesV3Router);
 app.use("/api/v3/config", configV3Router);
 
+// Legacy/Compatibility Route Aliases
+app.use("/api/pacs", pacsV3Router);
+app.use("/api/pacs/v2/key-images", keyImagesV3Router);
+app.use("/api/key-images", keyImagesV3Router);
+
+
 // Health Check Endpoint
 app.get("/health", (req, res) => {
   res.json({
