@@ -51,6 +51,12 @@ const DoctorDashboardV3 = () => {
   const fetchStudies = async () => {
     setLoading(true);
     try {
+      const res = await api.get("/api/v3/pacs/studies").catch(() => null);
+      let fetchedList = [];
+      if (res?.data?.success && Array.isArray(res.data.studies) && res.data.studies.length > 0) {
+        fetchedList = res.data.studies;
+      }
+
       const mockStudies = [
         {
           id: "std_101",
@@ -83,47 +89,17 @@ const DoctorDashboardV3 = () => {
           is_stat: false,
           status: "DRAFT",
           ai_recommendation: "Bilateral ground-glass opacities identified"
-        },
-        {
-          id: "std_103",
-          study_uid: "1.2.392.200036.9125.2.2.20260928.3003",
-          patient_mrn: "MRN-77192",
-          patient_name: "RAMESH^KUMAR",
-          patient_age: "62Y",
-          patient_sex: "M",
-          modality: "CR",
-          study_description: "CHEST PA VIEW (POST-OPERATIVE)",
-          study_date: "2026-09-28 07:45",
-          total_series: 1,
-          total_instances: 1,
-          is_stat: false,
-          status: "FINALIZED",
-          ai_recommendation: "Unremarkable chest radiograph"
-        },
-        {
-          id: "std_104",
-          study_uid: "1.3.12.2.1107.5.2.32.35109.20260928.4004",
-          patient_mrn: "MRN-66104",
-          patient_name: "PRIYA^SHARMA",
-          patient_age: "29Y",
-          patient_sex: "F",
-          modality: "US",
-          study_description: "ULTRASOUND ABDOMEN & PELVIS COMPLETE",
-          study_date: "2026-09-28 09:40",
-          total_series: 2,
-          total_instances: 42,
-          is_stat: true,
-          status: "UNREPORTED",
-          ai_recommendation: "STAT: Acute cholecystitis signs"
         }
       ];
-      setStudies(mockStudies);
+
+      setStudies(fetchedList.length > 0 ? [...fetchedList, ...mockStudies] : mockStudies);
     } catch (err) {
       console.error("Failed to load studies:", err);
     } finally {
       setLoading(false);
     }
   };
+
 
   const filteredStudies = studies.filter((study) => {
     const matchesSearch = 

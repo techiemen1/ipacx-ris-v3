@@ -280,10 +280,242 @@ function generateFallbackDicomBuffer(instanceId, sliceNum = 1) {
   return Buffer.from(svg);
 }
 
+/**
+ * Fetch Live DICOM Patient Studies from Orthanc PACS
+ */
+async function fetchLiveOrthancStudies() {
+  try {
+    const orthancUrl = await getOrthancUrl();
+    const auth = {
+      username: process.env.ORTHANC_USER || "orthanc",
+      password: process.env.ORTHANC_PASSWORD || process.env.ORTHANC_PASS || "orthanc"
+    };
+
+    const res = await axios.get(`${orthancUrl}studies?expand`, { auth, timeout: 5000 });
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      return res.data.map(study => {
+        const tags = study.MainDicomTags || {};
+        const pTags = study.PatientMainDicomTags || {};
+        const studyDateRaw = tags.StudyDate || "20260928";
+        const studyTimeRaw = tags.StudyTime || "083000";
+        
+        const formattedDate = `${studyDateRaw.substring(0,4)}-${studyDateRaw.substring(4,6)}-${studyDateRaw.substring(6,8)} ${studyTimeRaw.substring(0,2)}:${studyTimeRaw.substring(2,4)}`;
+        const seriesCount = Array.isArray(study.Series) ? study.Series.length : 1;
+
+        return {
+          id: study.ID,
+          study_uid: tags.StudyInstanceUID || study.ID,
+          patient_mrn: pTags.PatientID || "PACS-AUTO",
+          patient_name: pTags.PatientName ? pTags.PatientName.replace(/\^/g, " ") : "UNNAMED PATIENT",
+          patient_age: pTags.PatientBirthDate ? `${new Date().getFullYear() - parseInt(pTags.PatientBirthDate.substring(0,4), 10)}Y` : "35Y",
+          patient_sex: pTags.PatientSex || "F",
+          modality: tags.StudyDescription ? (tags.StudyDescription.toUpperCase().includes("MR") ? "MR" : tags.StudyDescription.toUpperCase().includes("CT") ? "CT" : "CR") : "CT",
+          study_description: tags.StudyDescription || "DICOM EXAMINATION",
+          study_date: formattedDate,
+          total_series: seriesCount,
+          total_instances: seriesCount * 24,
+          is_stat: tags.StudyDescription ? tags.StudyDescription.toUpperCase().includes("EMERGENCY") : false,
+          status: "UNREPORTED",
+          ai_recommendation: tags.StudyDescription ? `Live Orthanc Study: ${tags.StudyDescription}` : "PACS Study Ingest Complete",
+          node_source: "ORTHANC_PACS",
+          fetch_status: "IN_LOCAL_PACS"
+        };
+      });
+    }
+  } catch (err) {
+    console.warn("[v3 Hybrid Gateway] fetchLiveOrthancStudies error:", err.message);
+  }
+  return [];
+}
+
+/**
+ * Fetch Registered DICOM Modality Nodes from Orthanc
+ */
+async function fetchOrthancModalities() {
+  try {
+    const orthancUrl = await getOrthancUrl();
+    const auth = {
+      username: process.env.ORTHANC_USER || "orthanc",
+      password: process.env.ORTHANC_PASSWORD || process.env.ORTHANC_PASS || "orthanc"
+    };
+
+    const res = await axios.get(`${orthancUrl}modalities?expand`, { auth, timeout: 3000 });
+    if (res.data && typeof res.data === "object") {
+      const nodeList = Object.entries(res.data).map(([name, conf]) => ({
+        id: name,
+        aet: conf.AET || name,
+        host: conf.Host || "localhost",
+        port: conf.Port || 104,
+        protocol: "C-FIND / C-MOVE",
+        status: "ONLINE",
+        speed: "1 Gbps"
+      }));
+      if (nodeList.length > 0) return nodeList;
+    }
+  } catch (err) {
+    console.warn("[v3 Hybrid Gateway] fetchOrthancModalities error:", err.message);
+  }
+  return [
+    { id: "node_1", aet: "ORTHANC_PACS", host: "localhost", port: 8043, protocol: "C-FIND / DICOM WEB", status: "ONLINE", speed: "1 Gbps" },
+    { id: "node_2", aet: "DCM4CHEE_ARC", host: "192.168.1.120", port: 8080, protocol: "DICOM C-STORE", status: "ONLINE", speed: "10 Gbps" },
+    { id: "node_3", aet: "GE_CENTRICITY", host: "10.0.4.15", port: 104, protocol: "C-MOVE / DIMSE", status: "STANDBY", speed: "1 Gbps" },
+    { id: "node_4", aet: "SIEMENS_VA20", host: "10.0.4.22", port: 104, protocol: "C-MOVE / DIMSE", status: "ONLINE", speed: "10 Gbps" }
+  ];
+}
+
+/**
+ * Register a new DICOM Modality Node in Orthanc
+ */
+async function addOrthancModality(name, aet, host, port) {
+  try {
+    const orthancUrl = await getOrthancUrl();
+    const auth = {
+      username: process.env.ORTHANC_USER || "orthanc",
+      password: process.env.ORTHANC_PASSWORD || process.env.ORTHANC_PASS || "orthanc"
+    };
+
+    const nodeName = (name || aet || "DICOM_NODE").replace(/[^a-zA-Z0-9_-]/g, "_");
+    await axios.put(`${orthancUrl}modalities/${nodeName}`, {
+      AET: aet,
+      Host: host,
+      Port: parseInt(port, 10) || 104
+    }, { auth, timeout: 4000 });
+
+    console.log(`[v3 Hybrid Gateway] DICOM Modality registered in Orthanc: ${nodeName} (${aet}@${host}:${port})`);
+    return { success: true, name: nodeName };
+  } catch (err) {
+    console.error("[v3 Hybrid Gateway] addOrthancModality error:", err.message);
+    throw err;
+  }
+}
+
+/**
+ * Execute DICOM C-FIND SCU query to a registered DICOM node via Orthanc
+ */
+async function queryRemoteDicomNode(nodeId, filters = {}) {
+  try {
+    const orthancUrl = await getOrthancUrl();
+    const auth = {
+      username: process.env.ORTHANC_USER || "orthanc",
+      password: process.env.ORTHANC_PASSWORD || process.env.ORTHANC_PASS || "orthanc"
+    };
+
+    const targetNode = (nodeId && nodeId !== "ALL" && nodeId !== "node_1") ? nodeId : "ORTHANC_PACS";
+    
+    // Check if querying local Orthanc
+    if (targetNode === "ORTHANC_PACS" || targetNode === "node_1") {
+      return await fetchLiveOrthancStudies();
+    }
+
+    // Build C-FIND DICOM Query payload
+    const queryPayload = {
+      Level: "Study",
+      Query: {
+        PatientName: filters.patientName ? `*${filters.patientName}*` : "*",
+        PatientID: filters.patientMrn || "",
+        AccessionNumber: filters.accession || "",
+        Modality: (filters.modality && filters.modality !== "ALL") ? filters.modality : "",
+        StudyDescription: "",
+        StudyDate: ""
+      }
+    };
+
+    console.log(`[v3 Gateway] Initiating C-FIND SCU query to node: ${targetNode}`);
+    const queryRes = await axios.post(`${orthancUrl}modalities/${targetNode}/query`, queryPayload, { auth, timeout: 6000 });
+
+    if (queryRes?.data?.ID) {
+      const queryId = queryRes.data.ID;
+      const answersRes = await axios.get(`${orthancUrl}queries/${queryId}/answers`, { auth, timeout: 5000 });
+      const answerIndices = answersRes.data || [];
+
+      const parsedAnswers = await Promise.all(
+        answerIndices.map(async (idx) => {
+          try {
+            const contentRes = await axios.get(`${orthancUrl}queries/${queryId}/answers/${idx}/content?simplify`, { auth, timeout: 4000 });
+            const tags = contentRes.data || {};
+            const studyDateRaw = tags.StudyDate || "20260928";
+            const formattedDate = studyDateRaw.length === 8 
+              ? `${studyDateRaw.substring(0,4)}-${studyDateRaw.substring(4,6)}-${studyDateRaw.substring(6,8)}` 
+              : studyDateRaw;
+
+            return {
+              id: `query_${queryId}_${idx}`,
+              query_id: queryId,
+              answer_index: idx,
+              study_uid: tags.StudyInstanceUID || `1.2.840.${queryId}.${idx}`,
+              patient_mrn: tags.PatientID || "DICOM-REMOTE",
+              patient_name: tags.PatientName ? String(tags.PatientName).replace(/\^/g, " ") : "UNNAMED PATIENT",
+              modality: tags.Modality || filters.modality || "CT",
+              study_description: tags.StudyDescription || "REMOTE DICOM STUDY",
+              study_date: formattedDate,
+              series_count: parseInt(tags.NumberOfStudyRelatedSeries || 1, 10),
+              instances_count: parseInt(tags.NumberOfStudyRelatedInstances || 24, 10),
+              node_source: targetNode,
+              fetch_status: "AVAILABLE"
+            };
+          } catch (e) {
+            return null;
+          }
+        })
+      );
+
+      const validAnswers = parsedAnswers.filter(Boolean);
+      if (validAnswers.length > 0) return validAnswers;
+    }
+  } catch (err) {
+    console.warn(`[v3 Gateway] queryRemoteDicomNode warning for ${nodeId}:`, err.message);
+  }
+
+  return [];
+}
+
+/**
+ * Trigger DICOM C-MOVE SCU retrieve from registered DICOM node
+ */
+async function retrieveStudyFromNode({ queryId, answerIndex, nodeId, studyUID }) {
+  try {
+    const orthancUrl = await getOrthancUrl();
+    const auth = {
+      username: process.env.ORTHANC_USER || "orthanc",
+      password: process.env.ORTHANC_PASSWORD || process.env.ORTHANC_PASS || "orthanc"
+    };
+
+    if (queryId !== undefined && answerIndex !== undefined) {
+      console.log(`[v3 Gateway] Triggering C-MOVE retrieve for query ${queryId} index ${answerIndex}`);
+      const moveRes = await axios.post(`${orthancUrl}queries/${queryId}/answers/${answerIndex}/retrieve`, "ORTHANC", {
+        auth,
+        headers: { "Content-Type": "text/plain" },
+        timeout: 10000
+      });
+      return moveRes.data;
+    }
+
+    if (nodeId && studyUID) {
+      console.log(`[v3 Gateway] Triggering C-MOVE retrieve for node ${nodeId} study ${studyUID}`);
+      const moveRes = await axios.post(`${orthancUrl}modalities/${nodeId}/move`, {
+        Resources: [{ Level: "Study", StudyInstanceUID: studyUID }],
+        TargetAet: "ORTHANC"
+      }, { auth, timeout: 10000 });
+      return moveRes.data;
+    }
+
+    throw new Error("Missing required parameters for C-MOVE (queryId + answerIndex OR nodeId + studyUID)");
+  } catch (err) {
+    console.error("[v3 Gateway] retrieveStudyFromNode error:", err.message);
+    throw err;
+  }
+}
+
 module.exports = {
   getOrthancUrl,
   getWorkingDcm4cheeNode,
   fetchHybridSeriesAndInstances,
-  fetchHybridInstanceBuffer
+  fetchHybridInstanceBuffer,
+  fetchLiveOrthancStudies,
+  fetchOrthancModalities,
+  addOrthancModality,
+  queryRemoteDicomNode,
+  retrieveStudyFromNode
 };
+
 
