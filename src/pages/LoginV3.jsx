@@ -74,7 +74,21 @@ const LoginV3 = ({ onLoginSuccess }) => {
       if (onLoginSuccess) {
         onLoginSuccess(userPayload);
       }
-      navigate("/");
+
+      // Auto Sync Portal Page as per User Login Role
+      if (selectedRole === "RADIOLOGIST") {
+        navigate("/");
+      } else if (selectedRole === "TECHNICIAN") {
+        navigate("/mwl-manager");
+      } else if (selectedRole === "BILLING") {
+        navigate("/billing");
+      } else if (selectedRole === "HR_MANAGER") {
+        navigate("/hr-users");
+      } else if (selectedRole === "ADMIN") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     }, 800);
   };
 

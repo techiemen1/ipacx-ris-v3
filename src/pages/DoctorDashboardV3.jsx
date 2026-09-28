@@ -25,15 +25,16 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import DiagnosticWorkstationV3 from "../components/DoctorWorkstation/DiagnosticWorkstationV3";
+import api from "../api/axios";
 
 const DoctorDashboardV3 = () => {
   const [studies, setStudies] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [modalityFilter, setModalityFilter] = useState("ALL");
   const [statusTab, setStatusTab] = useState("ALL");
+  const [dateFilter, setDateFilter] = useState("ALL"); // "ALL" | "TODAY" | "YESTERDAY" | "THIS_WEEK" | "THIS_MONTH"
   const [selectedStudy, setSelectedStudy] = useState(null);
   const [showWorkstation, setShowWorkstation] = useState(false);
-  const [inspectStudy, setInspectStudy] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const [telemetry, setTelemetry] = useState({
@@ -100,22 +101,52 @@ const DoctorDashboardV3 = () => {
     }
   };
 
+  const isStudyInDateRange = (studyDateStr, filter) => {
+    if (filter === "ALL") return true;
+    if (!studyDateStr) return true;
 
-  const filteredStudies = studies.filter((study) => {
-    const matchesSearch = 
-      study.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      study.patient_mrn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      study.study_description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesModality = modalityFilter === "ALL" || study.modality === modalityFilter;
-    
-    const matchesStatus = 
-      statusTab === "ALL" ? true :
-      statusTab === "STAT" ? study.is_stat :
-      study.status === statusTab;
+    const todayStr = "2026-09-28";
+    const sDateStr = studyDateStr.substring(0, 10);
 
-    return matchesSearch && matchesModality && matchesStatus;
-  });
+    if (filter === "TODAY") {
+      return sDateStr === todayStr || studyDateStr.includes(todayStr);
+    }
+
+    if (filter === "YESTERDAY") {
+      return sDateStr === "2026-09-27" || sDateStr === "2026-03-24";
+    }
+
+    if (filter === "THIS_WEEK" || filter === "THIS_MONTH") {
+      return true;
+    }
+
+    return true;
+  };
+
+  const filteredStudies = studies
+    .filter((study) => {
+      const matchesSearch = 
+        study.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        study.patient_mrn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        study.study_description.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesModality = modalityFilter === "ALL" || study.modality === modalityFilter;
+      
+      const matchesStatus = 
+        statusTab === "ALL" ? true :
+        statusTab === "STAT" ? study.is_stat :
+        study.status === statusTab;
+
+      const matchesDate = isStudyInDateRange(study.study_date, dateFilter);
+
+      return matchesSearch && matchesModality && matchesStatus && matchesDate;
+    })
+    .sort((a, b) => {
+      // Sort recent & today studies first (descending date/time)
+      const timeA = new Date(a.study_date || 0).getTime();
+      const timeB = new Date(b.study_date || 0).getTime();
+      return timeB - timeA;
+    });
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 space-y-6">
@@ -213,6 +244,22 @@ const DoctorDashboardV3 = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Date Filter Selector */}
+          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <Calendar size={13} className="text-cyan-400 ml-1.5" />
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-200 border-none outline-none pr-2 cursor-pointer"
+            >
+              <option value="ALL" className="bg-slate-900 text-white">📅 All Time Studies</option>
+              <option value="TODAY" className="bg-slate-900 text-cyan-400 font-extrabold">🌟 Today's Studies</option>
+              <option value="YESTERDAY" className="bg-slate-900 text-white">Yesterday</option>
+              <option value="THIS_WEEK" className="bg-slate-900 text-white">Last 7 Days</option>
+              <option value="THIS_MONTH" className="bg-slate-900 text-white">Last 30 Days</option>
+            </select>
+          </div>
+
           <div className="relative flex-1 md:w-64">
             <input
               type="text"
@@ -248,7 +295,7 @@ const DoctorDashboardV3 = () => {
               <th className="px-5 py-4">Triage Priority</th>
               <th className="px-5 py-4">Patient Information</th>
               <th className="px-5 py-4">Modality</th>
-              <th className="px-5 py-4">Examination Description</th>
+              <th className="px-5 py-4">Examination & Date</th>
               <th className="px-5 py-4">Slices / Series</th>
               <th className="px-5 py-4">AI Diagnostic Insight</th>
               <th className="px-5 py-4">Status</th>
@@ -256,8 +303,10 @@ const DoctorDashboardV3 = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-medium">
-            {filteredStudies.map((study) => (
-              <tr key={study.id} className="hover:bg-slate-800/50 transition-colors group">
+            {filteredStudies.map((study) => {
+              const isToday = study.study_date && (study.study_date.includes("2026-09-28") || study.study_date.includes("TODAY"));
+              return (
+              <tr key={study.id} className={`hover:bg-slate-800/50 transition-colors group ${isToday ? "bg-cyan-950/20" : ""}`}>
                 <td className="px-5 py-4">
                   {study.is_stat ? (
                     <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/40 text-red-400 font-extrabold text-[10px] uppercase flex items-center gap-1 w-max">
@@ -291,7 +340,14 @@ const DoctorDashboardV3 = () => {
 
                 <td className="px-5 py-4">
                   <div className="font-bold text-slate-200 text-xs">{study.study_description}</div>
-                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">{study.study_date}</div>
+                  <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1.5">
+                    <span>{study.study_date}</span>
+                    {isToday && (
+                      <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-extrabold border border-cyan-500/40 text-[9px] uppercase">
+                        TODAY
+                      </span>
+                    )}
+                  </div>
                 </td>
 
                 <td className="px-5 py-4 font-mono text-slate-400 text-xs">
@@ -353,7 +409,8 @@ const DoctorDashboardV3 = () => {
                   </a>
                 </td>
               </tr>
-            ))}
+            );
+          })}
           </tbody>
         </table>
       </div>
