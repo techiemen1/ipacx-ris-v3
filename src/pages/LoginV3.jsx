@@ -1,6 +1,6 @@
 // FILE: src/pages/LoginV3.jsx
 import React, { useState, useEffect } from "react";
-import { Lock, User, ShieldCheck, Key, ArrowRight, CheckCircle2, Activity, Sparkles, Building, AlertCircle } from "lucide-react";
+import { Lock, User, ShieldCheck, Key, ArrowRight, CheckCircle2, Activity, Sparkles, Building, AlertCircle, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 
@@ -28,7 +28,6 @@ const LoginV3 = ({ onLoginSuccess }) => {
   });
 
   useEffect(() => {
-    // Dynamic Config Fetch
     const saved = localStorage.getItem("ipacx_hospital_config");
     if (saved) {
       try { setHospitalInfo(JSON.parse(saved)); } catch (e) {}
@@ -76,43 +75,51 @@ const LoginV3 = ({ onLoginSuccess }) => {
         onLoginSuccess(userPayload);
       }
       navigate("/");
-    }, 1000);
+    }, 800);
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-6 relative overflow-hidden font-sans">
-      {/* Background Decorative Blur Orbs */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+      {/* Background Radial Glow */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-      <div className="max-w-md w-full glass-panel p-8 rounded-3xl border border-slate-800 shadow-2xl relative z-10 space-y-6">
-        {/* Dynamic Hospital Header */}
+      <div className="max-w-lg w-full bg-slate-900/90 border border-slate-800 p-8 rounded-3xl backdrop-blur-2xl shadow-2xl relative z-10 space-y-6">
+        
+        {/* Dynamic Hospital Header Banner */}
         <div className="text-center space-y-2">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/30">
-            <Building size={32} />
+          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-xl shadow-cyan-600/30 mb-1">
+            <Building size={30} />
           </div>
-          <h1 className="text-xl font-black tracking-tight text-white uppercase">{hospitalInfo.hospitalName}</h1>
-          <p className="text-[11px] text-cyan-400 font-bold">{hospitalInfo.tagline}</p>
-          <div className="text-[10px] text-slate-500 font-mono">iPaCX RIS/PACS Integrated Platform v3.0</div>
+          <h1 className="text-xl font-black tracking-tight text-white uppercase font-heading">
+            {hospitalInfo.hospitalName}
+          </h1>
+          <p className="text-xs text-cyan-400 font-bold leading-relaxed">
+            {hospitalInfo.tagline}
+          </p>
+          <div className="text-[10px] text-slate-500 font-mono">
+            iPaCX RIS/PACS Integrated Platform v3.0
+          </div>
         </div>
 
         {/* Role Quick Selector Preset Tabs */}
         <div className="space-y-2">
-          <label className="block text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Select Operating Role Preset</label>
-          <div className="grid grid-cols-2 gap-2">
+          <label className="block text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
+            Select Operating Role Preset
+          </label>
+          <div className="grid grid-cols-2 gap-2.5">
             {ROLE_PRESETS.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => handleSelectRolePreset(p)}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
+                className={`p-3 rounded-2xl border text-left transition-all ${
                   selectedRole === p.id
-                    ? "bg-cyan-600/10 border-cyan-500 text-white shadow-md shadow-cyan-500/10"
-                    : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                    ? "bg-cyan-500/15 border-cyan-500 text-white shadow-lg shadow-cyan-500/10"
+                    : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
                 }`}
               >
-                <div className="font-bold text-xs">{p.label}</div>
-                <div className="text-[9px] text-cyan-400 font-mono">{p.roleBadge}</div>
+                <div className="font-extrabold text-xs text-slate-100">{p.label}</div>
+                <div className="text-[10px] text-cyan-400 font-mono mt-0.5">{p.roleBadge}</div>
               </button>
             ))}
           </div>
@@ -134,7 +141,7 @@ const LoginV3 = ({ onLoginSuccess }) => {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-3 pl-10 text-white font-bold focus:border-cyan-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 pl-10 text-white font-bold focus:border-cyan-500 focus:outline-none transition-colors"
                 />
                 <User size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
               </div>
@@ -148,7 +155,7 @@ const LoginV3 = ({ onLoginSuccess }) => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-3 pl-10 text-white font-mono focus:border-cyan-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 pl-10 text-white font-mono focus:border-cyan-500 focus:outline-none transition-colors"
                 />
                 <Lock size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
               </div>
@@ -156,7 +163,7 @@ const LoginV3 = ({ onLoginSuccess }) => {
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 transition-all"
+              className="w-full py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 transition-all cursor-pointer"
             >
               <span>Continue to 2FA Authentication</span>
               <ArrowRight size={16} />
@@ -165,7 +172,7 @@ const LoginV3 = ({ onLoginSuccess }) => {
         ) : (
           <form onSubmit={handleMfaSubmit} className="space-y-4 text-xs">
             <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-center text-xs font-bold space-y-1">
-              <ShieldCheck size={20} className="mx-auto text-cyan-400" />
+              <ShieldCheck size={22} className="mx-auto text-cyan-400" />
               <p>MFA 2-Factor Authentication Code Sent to Authenticator App</p>
             </div>
 
@@ -178,7 +185,7 @@ const LoginV3 = ({ onLoginSuccess }) => {
                   required
                   value={mfaCode}
                   onChange={(e) => setMfaCode(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-3 text-center text-cyan-400 font-mono font-black tracking-widest text-lg focus:border-cyan-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-center text-cyan-400 font-mono font-black tracking-widest text-lg focus:border-cyan-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -187,14 +194,14 @@ const LoginV3 = ({ onLoginSuccess }) => {
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="w-1/3 py-3 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs"
+                className="w-1/3 py-3 bg-slate-950 hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs border border-slate-800"
               >
                 Back
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-2/3 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all"
+                className="w-2/3 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
               >
                 {loading ? "Authenticating Session..." : "Secure Login to RIS/PACS"}
               </button>
@@ -202,7 +209,7 @@ const LoginV3 = ({ onLoginSuccess }) => {
           </form>
         )}
 
-        <div className="pt-4 border-t border-slate-800 text-center text-[10px] text-slate-500 font-mono">
+        <div className="pt-4 border-t border-slate-800/80 text-center text-[10px] text-slate-500 font-mono">
           {hospitalInfo.hospitalName} • HIPAA & DISHA Compliant JWT RBAC v3.0
         </div>
       </div>

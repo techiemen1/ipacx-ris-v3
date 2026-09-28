@@ -11,7 +11,8 @@ import LoginV3 from "./pages/LoginV3";
 import HrUserManagementV3 from "./pages/HrUserManagementV3";
 import UniversalAdvancedReportV3 from "./pages/UniversalAdvancedReportV3";
 import DoctorSignatureManagerV3 from "./components/DoctorWorkstation/DoctorSignatureManagerV3";
-import { Activity, ShieldCheck, Smartphone, UserPlus, CreditCard, Radio, Users, LogIn, LogOut, User, PenTool } from "lucide-react";
+import PacsQueryRetrieveV3 from "./pages/PacsQueryRetrieveV3";
+import { Activity, ShieldCheck, Smartphone, UserPlus, CreditCard, Radio, Users, LogIn, LogOut, User, PenTool, Database } from "lucide-react";
 
 const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
   const location = useLocation();
@@ -41,6 +42,17 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
           }`}
         >
           <Activity size={14} /> Worklist
+        </Link>
+
+        <Link
+          to="/pacs-nodes"
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+            location.pathname === "/pacs-nodes"
+              ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
+              : "bg-slate-950 text-slate-400 hover:text-white"
+          }`}
+        >
+          <Database size={14} /> PACS Nodes / Fetch
         </Link>
 
         <Link
@@ -97,6 +109,7 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
         >
           <ShieldCheck size={14} /> Admin
         </Link>
+
 
         {/* Doctor Signature Launcher */}
         <button
@@ -163,8 +176,10 @@ const App = () => {
           <Route path="/mwl-manager" element={<MwlManagerV3 />} />
           <Route path="/hr-users" element={<HrUserManagementV3 />} />
           <Route path="/admin" element={<AdminDashboardV3 />} />
+          <Route path="/pacs-nodes" element={<PacsQueryRetrieveV3 />} />
           <Route path="/advanced-report" element={<UniversalAdvancedReportV3 />} />
           <Route path="/v3/lite" element={<MobileLiteViewerV3 />} />
+
         </Routes>
 
         {showSigModal && (

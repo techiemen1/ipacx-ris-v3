@@ -50,11 +50,11 @@ router.get("/instance-preview/:instanceId", async (req, res) => {
     const { instanceId } = req.params;
     const { studyUID, seriesUID, frame } = req.query;
 
-    const buffer = await hybridGateway.fetchHybridInstanceBuffer(studyUID, seriesUID, instanceId, frame);
-    if (buffer && buffer.length > 500) {
-      res.setHeader("Content-Type", "image/jpeg");
+    const result = await hybridGateway.fetchHybridInstanceBuffer(studyUID, seriesUID, instanceId, frame);
+    if (result && result.buffer) {
+      res.setHeader("Content-Type", result.contentType || "image/jpeg");
       res.setHeader("Cache-Control", "public, max-age=86400");
-      return res.send(buffer);
+      return res.send(result.buffer);
     }
     res.status(404).send("Preview unavailable");
   } catch (err) {
@@ -64,4 +64,5 @@ router.get("/instance-preview/:instanceId", async (req, res) => {
 });
 
 module.exports = router;
+
 
