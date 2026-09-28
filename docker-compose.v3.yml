@@ -2,7 +2,21 @@
 version: "3.8"
 
 services:
-  # 1. iPaCX RIS/PACS v3.0 Core Express Backend
+  # 1. iPaCX RIS/PACS v3.0 Web Frontend (Port 5000 - Avoids Port 3000 OHIF Conflict)
+  ipacx-v3-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: ipacx-v3-frontend
+    restart: always
+    ports:
+      - "5000:80"
+    depends_on:
+      - ipacx-v3-backend
+    networks:
+      - ipacx-v3-network
+
+  # 2. iPaCX RIS/PACS v3.0 Core Express Backend
   ipacx-v3-backend:
     build:
       context: .
@@ -31,7 +45,7 @@ services:
     networks:
       - ipacx-v3-network
 
-  # 2. PostgreSQL 15 Enterprise Relational Database
+  # 3. PostgreSQL 15 Enterprise Relational Database
   ipacx-v3-db:
     image: postgres:15-alpine
     container_name: ipacx-v3-db
@@ -53,7 +67,7 @@ services:
     networks:
       - ipacx-v3-network
 
-  # 3. Orthanc DICOM Server (DICOMweb / WADO-RS Node)
+  # 4. Orthanc DICOM Server (DICOMweb / WADO-RS Node)
   ipacx-v3-orthanc:
     image: jodogne/orthanc-plugins:1.12.11
     container_name: ipacx-v3-orthanc
@@ -69,7 +83,7 @@ services:
     networks:
       - ipacx-v3-network
 
-  # 4. Redis High-Speed Cache & Pub/Sub
+  # 5. Redis High-Speed Cache & Pub/Sub
   ipacx-v3-redis:
     image: redis:7-alpine
     container_name: ipacx-v3-redis

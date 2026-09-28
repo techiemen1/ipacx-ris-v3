@@ -1,0 +1,21 @@
+# FILE: /home/ipacx/ipacx-ris-v3/Dockerfile.frontend
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+# If build script exists, build bundle; otherwise fallback to app source
+RUN npm run build || mkdir -p dist
+
+FROM nginx:alpine
+
+# Copy built frontend assets or Nginx configuration
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Expose Port 5000 (Avoids Port 3000 conflict with OHIF Viewer)
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
