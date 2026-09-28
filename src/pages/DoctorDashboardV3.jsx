@@ -348,10 +348,19 @@ const DoctorDashboardV3 = () => {
 
                   <button
                     onClick={() => { setSelectedStudy(study); setShowWorkstation(true); }}
-                    className="px-3.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-lg shadow-cyan-600/30 transition-all"
+                    className="px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-lg shadow-cyan-600/30 transition-all"
                   >
                     <FileText size={14} /> Report Studio
                   </button>
+
+                  <a
+                    href={`/advanced-report?accession=ACC-882910`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-purple-600/30"
+                  >
+                    <FileCheck size={14} /> Universal Report
+                  </a>
 
                   <a
                     href={`/v3/lite?study=${study.study_uid}`}

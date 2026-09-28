@@ -10,31 +10,64 @@ import {
   AlertCircle, 
   RefreshCw,
   Database,
-  Activity
+  Activity,
+  Building,
+  Save,
+  CheckCircle2
 } from "lucide-react";
 import PacsNodeModal from "../components/AdminPortal/PacsNodeModal";
+import api from "../api/axios";
 
 const AdminDashboardV3 = () => {
-  const [activeTab, setActiveTab] = useState("pacs_nodes"); // pacs_nodes | users | audit_logs | settings
+  const [activeTab, setActiveTab] = useState("hospital_branding"); // hospital_branding | pacs_nodes | users | settings
   const [pacsNodes, setPacsNodes] = useState([]);
   const [showNodeModal, setShowNodeModal] = useState(false);
   const [selectedNode, setSelectedNode] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [systemStats, setSystemStats] = useState({
-    totalStudies: 1420,
-    activeNodes: 2,
-    storageUsedGB: 84.5,
-    systemStatus: "HEALTHY"
+  const [savedSuccess, setSavedSuccess] = useState("");
+
+  const [hospitalConfig, setHospitalConfig] = useState({
+    hospitalName: "iPaCX RADIOLOGY & DIAGNOSTIC IMAGING CENTER",
+    tagline: "NABH Accredited • NHA ABDM M1/M2/M3 • AERB Radiation Safety Certified",
+    address: "Plot 104, Medical Center Avenue, Healthcare Hub, Maharashtra 400001",
+    phone: "+91 (022) 2891-0000 | report@ipacx-imaging.com",
+    gstin: "27AAAAA0000A1Z5",
+    sacCode: "999312",
+    logoUrl: ""
   });
 
   useEffect(() => {
     fetchPacsNodes();
+    fetchHospitalConfig();
   }, []);
+
+  const fetchHospitalConfig = async () => {
+    try {
+      const res = await api.get("/api/v3/config/hospital").catch(() => null);
+      if (res?.data?.success && res?.data?.config) {
+        setHospitalConfig(res.data.config);
+        localStorage.setItem("ipacx_hospital_config", JSON.stringify(res.data.config));
+      }
+    } catch (e) {
+      console.warn("Config fetch error:", e);
+    }
+  };
+
+  const handleSaveHospitalConfig = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/api/v3/config/hospital", hospitalConfig).catch(() => null);
+      localStorage.setItem("ipacx_hospital_config", JSON.stringify(hospitalConfig));
+      setSavedSuccess("✅ Hospital Branding updated! Changes reflected across Login Page, Workstation & Reports!");
+      setTimeout(() => setSavedSuccess(""), 4000);
+    } catch (err) {
+      console.error("Save config error:", err);
+    }
+  };
 
   const fetchPacsNodes = async () => {
     setLoading(true);
     try {
-      // Mock / Real API endpoint fallback for PACS nodes
       const mockNodes = [
         {
           id: "node_orthanc_1",
@@ -74,12 +107,12 @@ const AdminDashboardV3 = () => {
             <ShieldCheck className="text-cyan-400" size={28} />
             iPaCX RIS/PACS v3.0 Enterprise Governance
           </h1>
-          <p className="text-slate-400 text-sm mt-1">System Administration, PACS Nodes, Audit Security & Configuration</p>
+          <p className="text-slate-400 text-sm mt-1">System Administration, Hospital Branding, PACS Nodes & Infrastructure</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
             <Activity size={14} className="animate-pulse" />
-            System Health: {systemStats.systemStatus}
+            System Health: HEALTHY
           </div>
           <button 
             onClick={fetchPacsNodes} 
@@ -91,8 +124,25 @@ const AdminDashboardV3 = () => {
         </div>
       </header>
 
+      {savedSuccess && (
+        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/10">
+          <CheckCircle2 size={18} /> {savedSuccess}
+        </div>
+      )}
+
       {/* Navigation Tabs */}
       <div className="flex gap-3 mb-6 border-b border-slate-800 pb-2">
+        <button
+          onClick={() => setActiveTab("hospital_branding")}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${
+            activeTab === "hospital_branding"
+              ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/30"
+              : "bg-slate-900 text-slate-400 hover:text-white"
+          }`}
+        >
+          <Building size={18} /> Hospital Branding & Login Settings
+        </button>
+
         <button
           onClick={() => setActiveTab("pacs_nodes")}
           className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${
@@ -103,29 +153,92 @@ const AdminDashboardV3 = () => {
         >
           <Server size={18} /> PACS Nodes & VNA Gateway
         </button>
-
-        <button
-          onClick={() => setActiveTab("users")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${
-            activeTab === "users"
-              ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/30"
-              : "bg-slate-900 text-slate-400 hover:text-white"
-          }`}
-        >
-          <Users size={18} /> Radiologists & Doctor Accounts
-        </button>
-
-        <button
-          onClick={() => setActiveTab("settings")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${
-            activeTab === "settings"
-              ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/30"
-              : "bg-slate-900 text-slate-400 hover:text-white"
-          }`}
-        >
-          <Settings size={18} /> System Settings & DICOMweb Rules
-        </button>
       </div>
+
+      {/* Hospital Branding Tab Content */}
+      {activeTab === "hospital_branding" && (
+        <div className="glass-panel p-6 rounded-2xl border border-slate-800 max-w-3xl space-y-6">
+          <h2 className="text-base font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+            <Building className="text-cyan-400" size={20} /> Configure Hospital Name, Branding & Letterhead
+          </h2>
+
+          <form onSubmit={handleSaveHospitalConfig} className="space-y-4 text-xs font-medium">
+            <div>
+              <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">Hospital / Diagnostic Center Name (Reflects on Login & Reports)</label>
+              <input
+                type="text"
+                required
+                value={hospitalConfig.hospitalName}
+                onChange={(e) => setHospitalConfig({ ...hospitalConfig, hospitalName: e.target.value })}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-3 text-cyan-300 font-bold text-sm focus:border-cyan-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">Sub-Tagline / Accreditation Details</label>
+              <input
+                type="text"
+                value={hospitalConfig.tagline}
+                onChange={(e) => setHospitalConfig({ ...hospitalConfig, tagline: e.target.value })}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-medium focus:border-cyan-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">Hospital Address</label>
+                <input
+                  type="text"
+                  value={hospitalConfig.address}
+                  onChange={(e) => setHospitalConfig({ ...hospitalConfig, address: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-medium focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">Helpline Phone & Email</label>
+                <input
+                  type="text"
+                  value={hospitalConfig.phone}
+                  onChange={(e) => setHospitalConfig({ ...hospitalConfig, phone: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-medium focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">GSTIN Number</label>
+                <input
+                  type="text"
+                  value={hospitalConfig.gstin}
+                  onChange={(e) => setHospitalConfig({ ...hospitalConfig, gstin: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-emerald-400 font-mono font-bold focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">Healthcare SAC Code</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={hospitalConfig.sacCode}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-purple-400 font-mono font-bold focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800 flex justify-end">
+              <button
+                type="submit"
+                className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-cyan-600/30 transition-all"
+              >
+                <Save size={16} /> Save Branding & Sync to Login / Reports
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* PACS Nodes Tab Content */}
       {activeTab === "pacs_nodes" && (

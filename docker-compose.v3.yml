@@ -37,6 +37,8 @@ services:
       - ORTHANC_PASSWORD=orthanc
       - REDIS_HOST=ipacx-v3-redis
       - REDIS_PORT=6379
+    volumes:
+      - ./backend:/app/backend
     depends_on:
       ipacx-v3-db:
         condition: service_healthy

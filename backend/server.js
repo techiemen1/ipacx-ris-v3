@@ -5,6 +5,11 @@ const cors = require("cors");
 const pacsV3Router = require("./routes/pacsV3");
 const keyImagesV3Router = require("./routes/keyImagesV3");
 const reportsV3Router = require("./routes/reportsV3");
+const billingV3Router = require("./routes/billingV3");
+const mwlV3Router = require("./routes/mwlV3");
+const authV3Router = require("./routes/authV3");
+const signaturesV3Router = require("./routes/signaturesV3");
+const configV3Router = require("./routes/configV3");
 
 const app = express();
 const PORT = process.env.PORT || 5003;
@@ -17,6 +22,11 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use("/api/v3/pacs", pacsV3Router);
 app.use("/api/v3/key-images", keyImagesV3Router);
 app.use("/api/v3/reports", reportsV3Router);
+app.use("/api/v3/billing", billingV3Router);
+app.use("/api/v3/mwl", mwlV3Router);
+app.use("/api/v3/auth", authV3Router);
+app.use("/api/v3/signatures", signaturesV3Router);
+app.use("/api/v3/config", configV3Router);
 
 // Health Check Endpoint
 app.get("/health", (req, res) => {
