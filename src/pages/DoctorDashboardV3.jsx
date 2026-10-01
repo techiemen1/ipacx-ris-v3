@@ -24,10 +24,13 @@ import {
   Database,
   ExternalLink,
   LayoutGrid,
-  List
+  List,
+  Split,
+  PenTool
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import DiagnosticWorkstationV3 from "../components/DoctorWorkstation/DiagnosticWorkstationV3";
+import ReportingStudioV3 from "./ReportingStudioV3";
 import api from "../api/axios";
 import { useTheme } from "../utils/ThemeContext";
 
@@ -43,6 +46,7 @@ const DoctorDashboardV3 = () => {
   const [viewMode, setViewMode] = useState(typeof window !== "undefined" && window.innerWidth < 768 ? "CARDS" : "TABLE"); // "TABLE" | "CARDS"
   const [selectedStudy, setSelectedStudy] = useState(null);
   const [showWorkstation, setShowWorkstation] = useState(false);
+  const [showReportingStudio, setShowReportingStudio] = useState(false);
   const [loading, setLoading] = useState(false);
 
 
@@ -445,9 +449,17 @@ const DoctorDashboardV3 = () => {
                       <button
                         onClick={() => { setSelectedStudy(study); setShowWorkstation(true); }}
                         className="px-2.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-extrabold inline-flex items-center gap-1 shadow-md shadow-cyan-600/30 transition-all cursor-pointer shrink-0"
-                        title="Open 50:50 Side-by-Side Report Studio"
+                        title="Open 50:50 Multilayered DICOM Viewer & Reporting Studio"
                       >
-                        <FileText size={13} /> 50:50 Studio
+                        <Split size={13} /> 50:50 Studio
+                      </button>
+
+                      <button
+                        onClick={() => { setSelectedStudy(study); setShowReportingStudio(true); }}
+                        className="px-2.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-extrabold inline-flex items-center gap-1 shadow-md shadow-purple-600/30 transition-all cursor-pointer shrink-0"
+                        title="Open World-Class Standalone Reporting Studio"
+                      >
+                        <PenTool size={13} /> Report Studio
                       </button>
 
                       <a
@@ -542,31 +554,38 @@ const DoctorDashboardV3 = () => {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/80">
+                {/* Action Buttons Grid */}
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
                   <button
                     onClick={() => { setSelectedStudy(study); setShowWorkstation(true); }}
-                    className="px-2 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-1 shadow-md shadow-cyan-600/30 cursor-pointer"
+                    className="px-2 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-1 shadow-md shadow-cyan-600/30 cursor-pointer"
                   >
-                    <FileText size={13} /> 50:50 Studio
+                    <Split size={13} /> 50:50 Studio
+                  </button>
+
+                  <button
+                    onClick={() => { setSelectedStudy(study); setShowReportingStudio(true); }}
+                    className="px-2 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-1 shadow-md shadow-purple-600/30 cursor-pointer"
+                  >
+                    <PenTool size={13} /> Report Studio
                   </button>
 
                   <a
                     href={getOhifViewerUrl(study)}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-2 py-2.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1"
+                    className="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1"
                   >
-                    <ExternalLink size={13} /> OHIF
+                    <ExternalLink size={13} /> OHIF Viewer
                   </a>
 
                   <a
                     href={`/v3/lite?study=${study.study_uid}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-2 py-2.5 bg-slate-950 hover:bg-slate-900 text-slate-300 border border-slate-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-1"
+                    className="px-2 py-1.5 bg-slate-950 hover:bg-slate-900 text-slate-300 border border-slate-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-1"
                   >
-                    <Smartphone size={13} /> Mobile
+                    <Smartphone size={13} /> Mobile Viewer
                   </a>
                 </div>
               </div>
@@ -575,11 +594,19 @@ const DoctorDashboardV3 = () => {
         </div>
       )}
 
-      {/* 50:50 SIDE-BY-SIDE DIAGNOSTIC WORKSTATION MODAL */}
+      {/* 🌟 50:50 MULTILAYERED DIAGNOSTIC WORKSTATION MODAL */}
       {showWorkstation && selectedStudy && (
         <DiagnosticWorkstationV3
           study={selectedStudy}
           onClose={() => setShowWorkstation(false)}
+        />
+      )}
+
+      {/* 🌟 STANDALONE RADIOLOGY REPORTING STUDIO MODAL */}
+      {showReportingStudio && selectedStudy && (
+        <ReportingStudioV3
+          study={selectedStudy}
+          onClose={() => setShowReportingStudio(false)}
         />
       )}
     </div>

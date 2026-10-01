@@ -13,6 +13,7 @@ import UniversalAdvancedReportV3 from "./pages/UniversalAdvancedReportV3";
 import DoctorSignatureManagerV3 from "./components/DoctorWorkstation/DoctorSignatureManagerV3";
 import PacsQueryRetrieveV3 from "./pages/PacsQueryRetrieveV3";
 import ReportsArchiveV3 from "./pages/ReportsArchiveV3";
+import ReportingStudioV3 from "./pages/ReportingStudioV3";
 import { Activity, ShieldCheck, Smartphone, UserPlus, CreditCard, Radio, Users, LogIn, LogOut, User, PenTool, Database, FileCheck, Sun, Moon } from "lucide-react";
 import { ThemeProvider, useTheme } from "./utils/ThemeContext";
 
@@ -257,6 +258,7 @@ const MainAppContent = () => {
           <Route path="/admin" element={currentUser ? <AdminDashboardV3 /> : <Navigate to="/login" replace />} />
           <Route path="/pacs-nodes" element={currentUser ? <PacsQueryRetrieveV3 /> : <Navigate to="/login" replace />} />
           <Route path="/reports" element={currentUser ? <ReportsArchiveV3 /> : <Navigate to="/login" replace />} />
+          <Route path="/reporting-studio" element={currentUser ? <ReportingStudioV3 /> : <Navigate to="/login" replace />} />
           <Route path="/advanced-report" element={<UniversalAdvancedReportV3 />} />
           <Route path="/v3/lite" element={<MobileLiteViewerV3 />} />
         </Routes>

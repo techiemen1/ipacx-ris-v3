@@ -426,6 +426,40 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
           {(layoutMode === "SPLIT" || layoutMode === "VIEWER") && (
             <div className={`flex flex-col bg-black border-r border-slate-800 relative ${layoutMode === "SPLIT" ? "w-1/2" : "w-full"}`}>
               
+              {/* 🌟 MULTILAYERED DICOM TOOL QUICK-BAR */}
+              <div className="px-3 py-1.5 bg-slate-900/95 border-b border-slate-800 flex items-center justify-between gap-2 overflow-x-auto scrollbar-none shrink-0 text-xs">
+                {/* Window Level (W/L) Presets */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">W/L:</span>
+                  <button onClick={() => { setBrightness(1.0); setContrast(1.0); setToastMessage("W/L: Soft Tissue (W:400 L:40)"); setTimeout(()=>setToastMessage(""), 1500); }} className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-cyan-300 font-extrabold text-[10px] hover:border-cyan-500">Soft Tissue</button>
+                  <button onClick={() => { setBrightness(1.3); setContrast(1.8); setToastMessage("W/L: Bone (W:2000 L:500)"); setTimeout(()=>setToastMessage(""), 1500); }} className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 font-extrabold text-[10px] hover:border-cyan-500">Bone</button>
+                  <button onClick={() => { setBrightness(1.4); setContrast(2.2); setToastMessage("W/L: Lung (W:1500 L:-600)"); setTimeout(()=>setToastMessage(""), 1500); }} className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-emerald-300 font-extrabold text-[10px] hover:border-emerald-500">Lung</button>
+                  <button onClick={() => { setBrightness(0.9); setContrast(1.4); setToastMessage("W/L: Brain (W:80 L:40)"); setTimeout(()=>setToastMessage(""), 1500); }} className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-purple-300 font-extrabold text-[10px] hover:border-purple-500">Brain</button>
+                </div>
+
+                {/* MPR Planes */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">MPR:</span>
+                  <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold">Axial 2D</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800 text-[10px] font-bold">Sagittal</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800 text-[10px] font-bold">Coronal</span>
+                  <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold">3D MIP</span>
+                </div>
+
+                {/* Cine Controls */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setIsPlayingCine(!isPlayingCine)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-black flex items-center gap-1 border transition-all ${
+                      isPlayingCine ? "bg-amber-500/20 text-amber-400 border-amber-500/40" : "bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700"
+                    }`}
+                  >
+                    {isPlayingCine ? <Pause size={12} /> : <Play size={12} />}
+                    <span>{isPlayingCine ? "Pause Cine" : "Play Cine"}</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Embedded OHIF Viewer Iframe */}
               <div className="flex-1 bg-black relative">
                 <iframe
