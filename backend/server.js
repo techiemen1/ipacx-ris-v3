@@ -10,6 +10,7 @@ const mwlV3Router = require("./routes/mwlV3");
 const authV3Router = require("./routes/authV3");
 const signaturesV3Router = require("./routes/signaturesV3");
 const configV3Router = require("./routes/configV3");
+const templatesV3Router = require("./routes/templatesV3");
 
 const path = require("path");
 
@@ -32,6 +33,7 @@ app.use("/api/v3/mwl", mwlV3Router);
 app.use("/api/v3/auth", authV3Router);
 app.use("/api/v3/signatures", signaturesV3Router);
 app.use("/api/v3/config", configV3Router);
+app.use("/api/v3/templates", templatesV3Router);
 
 // Legacy/Compatibility Route Aliases
 app.use("/api/pacs", pacsV3Router);

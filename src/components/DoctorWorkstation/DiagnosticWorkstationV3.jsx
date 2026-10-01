@@ -42,22 +42,24 @@ import {
 } from "lucide-react";
 import api from "../../api/axios";
 import MobileMPRViewer from "../DICOMViewer/MobileMPRViewer";
+import DoctorSignatureManagerV3 from "./DoctorSignatureManagerV3";
 import { getOhifViewerUrl } from "../../utils/viewerUrl";
 
-// 🌟 RADLEX STRUCTURED REPORT TEMPLATES
-const REPORT_TEMPLATES = [
+// 🌟 COMPREHENSIVE MULTI-MODALITY RADIOLOGY REPORT TEMPLATES (RADLEX / ACR STANDARDS)
+const COMPREHENSIVE_TEMPLATES = [
+  // --- CT TEMPLATES ---
   {
-    id: "ct_head",
-    category: "Neuroradiology",
-    title: "CT Head Non-Contrast (Brain Protocol)",
+    id: "ct_head_brain",
+    category: "Head & Brain",
+    title: "CT Head Non-Contrast (Routine Brain Protocol)",
     modality: "CT",
     indication: "Acute neurological deficit / cephalea.",
-    technique: "Non-contrast axial CT scan of the brain from skull base to vertex with 5mm thin reconstructed slices.",
+    technique: "Non-contrast axial CT scan of the brain from skull base to vertex at 5mm thin reconstructed slices.",
     findings: `CLINICAL INDICATION: Acute neurological deficit / cephalea.
 
-TECHNIQUE: Non-contrast axial CT scan of the brain from skull base to vertex with 5mm thin reconstructed slices.
+TECHNIQUE: Non-contrast axial CT scan of the brain from skull base to vertex at 5mm thin reconstructed slices.
 
-BRAIN PARENCHYMA: Cerebral hemispheres show normal grey-white matter differentiation. No focal parenchymal attenuation abnormality or acute ischemic infarct identified. No intra-axial or extra-axial hematoma, subdural, or epidural fluid collection.
+BRAIN PARENCHYMA: Cerebral hemispheres show normal grey-white matter differentiation. No focal parenchymal attenuation abnormality or acute ischemic territorial infarct identified. No intra-axial or extra-axial hematoma, subdural, or epidural fluid collection.
 
 VENTRICLES & CISTERNS: Lateral, third, and fourth ventricles are normal in size, shape, and midline alignment. Basal cisterns and cortical sulci are clear.
 
@@ -69,50 +71,211 @@ BONY CALVARIUM: Calvarium and skull base intact without fracture line. Paranasal
 2. No acute intracranial hemorrhage, mass effect, territorial acute infarct, or calvarial fracture.`
   },
   {
-    id: "mri_brain",
-    category: "Neuroradiology",
-    title: "MRI Brain with Contrast (Neuro Protocol)",
-    modality: "MR",
-    indication: "Recurrent vascular headache and focal neurological screening.",
-    technique: "Multiplanar T1W, T2W, FLAIR, DWI, ADC, and Post-contrast T1 FS MR sequences acquired on 1.5T MRI scanner.",
-    findings: `CLINICAL INDICATION: Recurrent vascular headache and focal neurological screening.
-
-TECHNIQUE: Multiplanar T1W, T2W, FLAIR, DWI, ADC, and Post-contrast T1 FS MR sequences acquired on 1.5T MRI scanner.
-
-BRAIN PARENCHYMA: Symmetrical cerebral hemispheres with normal signal intensity. No acute diffusion restriction on DWI/ADC maps. No abnormal parenchymal contrast enhancement.
-
-VENTRICLES & CISTERNS: Normal ventricles and basal cisterns. Midline structures intact.`,
-    impression: `IMPRESSION:
-1. Normal MRI Brain study with contrast. No acute ischemic infarct or space-occupying lesion.`
-  },
-  {
-    id: "hrct_chest",
-    category: "Pulmonology & Chest",
+    id: "ct_chest_pulmonary",
+    category: "Chest & Lungs",
     title: "HRCT Chest (Pulmonary Parenchymal Protocol)",
     modality: "CT",
-    indication: "Persistent dry cough and dyspnea evaluation.",
-    technique: "High-resolution non-contrast CT chest images acquired from lung apices to bases at 1.0mm slice thickness.",
+    indication: "Persistent dry cough / Dyspnea evaluation.",
+    technique: "High-resolution non-contrast CT chest images acquired from apices to bases at 1.0mm slice thickness.",
     findings: `CLINICAL INDICATION: Persistent dry cough and dyspnea evaluation.
 
-TECHNIQUE: High-resolution non-contrast CT chest images acquired from lung apices to bases at 1.0mm slice thickness.
+TECHNIQUE: High-resolution non-contrast CT chest images acquired from apices to bases at 1.0mm slice thickness.
 
 LUNGS & AIRWAYS: Normal aeration bilaterally. No focal consolidation, ground-glass opacity, or reticular thickening. Trachea and main bronchi patent.
 
 PLEURA & MEDIASTINUM: No pleural effusion or pneumothorax. Normal cardiac size and mediastinal contours.`,
     impression: `IMPRESSION:
 1. Unremarkable HRCT Chest study. No active parenchymal pulmonary lesion or pleural effusion.`
+  },
+  {
+    id: "ct_abdomen_pelvis",
+    category: "Abdomen & Pelvis",
+    title: "CT Abdomen & Pelvis with Contrast",
+    indication: "Acute abdominal pain / Abdominal distension.",
+    technique: "Contrast-enhanced axial CT scan of abdomen and pelvis from diaphragmatic domes to pubic symphysis.",
+    findings: `LIVER & BILIARY: Normal liver size and attenuation. Biliary channels non-dilated. Gallbladder normal.
+SPLEEN & PANCREAS: Spleen and pancreas show normal enhancement.
+KIDNEYS: Symmetrical nephrogram. No hydronephrosis or renal calculus.
+BOWEL & PERITONEUM: Bowel loops of normal caliber. Appendix intact without fat stranding. No free air or fluid collection.`,
+    impression: `IMPRESSION:
+1. Normal CT Abdomen & Pelvis with contrast. No bowel obstruction, acute appendicitis, or intraperitoneal free fluid.`
+  },
+  {
+    id: "ct_kub",
+    category: "Abdomen & Pelvis",
+    title: "CT KUB Non-Contrast (Renal Calculus Protocol)",
+    indication: "Right flank pain radiating to groin / Hematuria.",
+    technique: "Non-contrast thin-section helical CT scan of kidneys, ureters, and urinary bladder.",
+    findings: `KIDNEYS: Both kidneys normal in size and position. No nephrolithiasis or hydronephrosis.
+URETERS: Non-dilated ureters bilaterally without ureteric calculus.
+BLADDER: Urinary bladder adequately distended. No vesical calculus.`,
+    impression: `IMPRESSION:
+1. No radiopaque urinary tract calculus or obstructive uropathy.`
+  },
+
+  // --- MRI TEMPLATES ---
+  {
+    id: "mr_brain_neuro",
+    category: "Head & Brain",
+    title: "MRI Brain with Contrast (Routine Neuro Protocol)",
+    modality: "MR",
+    indication: "Recurrent headache / Focal neurological screening.",
+    technique: "Multiplanar T1W, T2W, FLAIR, DWI, ADC, and Post-contrast T1 FS sequences on 1.5T MRI scanner.",
+    findings: `BRAIN PARENCHYMA: Symmetrical cerebral hemispheres with normal signal intensity. No acute restriction on DWI/ADC maps. No abnormal parenchymal contrast enhancement.
+VENTRICLES: Normal ventricles and basal cisterns. Midline structures intact.`,
+    impression: `IMPRESSION:
+1. Normal MRI Brain study with contrast. No acute ischemic stroke or mass lesion.`
+  },
+  {
+    id: "mr_lumbar_spine",
+    category: "Spine",
+    title: "MRI Lumbar Spine Non-Contrast",
+    indication: "Low back pain with bilateral lower limb radiculopathy.",
+    technique: "Sagittal T1W, T2W, STIR, and Axial T2W sequences of the lumbar spine.",
+    findings: `VERTEBRAE: Normal alignment and vertebral body heights. Bone marrow signal normal.
+DISCS: L1-S1 intervertebral disc hydration preserved. No posterior disc protrusion or nerve root compression.
+CORD: Conus medullaris terminates normally at L1 level.`,
+    impression: `IMPRESSION:
+1. Normal MRI Lumbar Spine study. No intervertebral disc herniation or canal stenosis.`
+  },
+  {
+    id: "mr_knee_joint",
+    category: "Musculoskeletal",
+    title: "MRI Knee Joint Non-Contrast",
+    indication: "Post-traumatic knee pain and locking.",
+    technique: "Multiplanar T1W, T2W FS, and PD FS sequences of the knee joint.",
+    findings: `MENISCI: Medial and lateral menisci show normal signal intensity without tear line.
+LIGAMENTS: ACL, PCL, MCL, and LCL are intact with continuous fibers.
+CARTILAGE: Joint cartilage preserved. No joint effusion.`,
+    impression: `IMPRESSION:
+1. Intact menisci and cruciate ligaments. No joint effusion or meniscal tear.`
+  },
+
+  // --- X-RAY / CR TEMPLATES ---
+  {
+    id: "cr_chest_pa",
+    category: "Chest & Lungs",
+    title: "X-Ray Chest PA View",
+    modality: "CR",
+    indication: "Routine pre-employment screening / Mild fever.",
+    technique: "Single projection PA radiograph of the chest.",
+    findings: `LUNGS: Clear lung fields bilaterally without focal opacity or consolidation.
+PLEURA: Costophrenic angles sharp. No pleural effusion.
+CARDIOMEDIASTINAL: Heart size within normal limits. Mediastinal contours intact.
+BONES: Bony thoracic cage intact.`,
+    impression: `IMPRESSION:
+1. Unremarkable single PA view chest radiograph.`
+  },
+  {
+    id: "cr_knee_ap_lat",
+    category: "Musculoskeletal",
+    title: "X-Ray Knee Joint AP & Lateral Views",
+    modality: "CR",
+    indication: "Knee pain / Trauma evaluation.",
+    technique: "Anteroposterior and lateral radiographs of the knee joint.",
+    findings: `BONES: Distal femur, proximal tibia, fibula, and patella are intact without acute fracture or bony destruction.
+JOINTS: Medial and lateral femorotibial joint spaces and patellofemoral joint space preserved. No osteophyte or joint space narrowing.`,
+    impression: `IMPRESSION:
+1. Normal knee radiograph. No acute fracture or significant degenerative joint disease.`
+  },
+
+  // --- ULTRASOUND TEMPLATES ---
+  {
+    id: "us_whole_abdomen",
+    category: "Abdomen & Pelvis",
+    title: "Ultrasound Whole Abdomen & Pelvis",
+    modality: "US",
+    indication: "Routine abdominal pain evaluation.",
+    technique: "Real-time gray-scale ultrasound of whole abdomen and pelvis using 3.5MHz probe.",
+    findings: `LIVER: Normal size (13.2 cm) with homogeneous echotexture. No focal lesion.
+GALLBLADDER: Wall thickness normal without gallstones or sludge.
+KIDNEYS: Right (10.4 cm) and Left (10.6 cm) kidneys show normal cortical thickness. No calculus or hydronephrosis.
+BLADDER: Adequately filled. No free fluid in pelvis.`,
+    impression: `IMPRESSION:
+1. Normal Ultrasound Whole Abdomen & Pelvis study.`
+  },
+  {
+    id: "us_fetal_anomaly_level2",
+    category: "Obstetrics & Fetal",
+    title: "US Fetal Anomaly Scan 18-22 Weeks (ISUOG Level II)",
+    modality: "US",
+    indication: "Targeted Fetal Anomaly Scan at 20 Weeks Gestation.",
+    technique: "Targeted 2D, 3D, and Color Doppler Ultrasound of single intrauterine fetus.",
+    findings: `BIOMETRY: BPD 48mm (20w2d), HC 178mm (20w3d), AC 154mm (20w4d), FL 32mm (20w2d). EFW 385g.
+ANATOMY: Brain, Spine, 4-chamber Heart (HR 146 bpm), Abdomen, Kidneys, and Limbs normal.
+PLACENTA: Anterior wall, Grade I. AFI 14.2 cm (Adequate). 3-vessel cord.`,
+    impression: `IMPRESSION:
+1. Single live fetus corresponding to 20w 3d.
+2. Normal targeted Level II anomaly scan. No congenital structural anomaly detected.`
+  },
+
+  // --- MAMMOGRAPHY TEMPLATES ---
+  {
+    id: "mg_bilateral_birads1",
+    category: "Breast",
+    title: "Mammography Bilateral (BI-RADS Category 1)",
+    modality: "MG",
+    indication: "Routine annual screening mammography.",
+    technique: "Standard Bilateral Craniocaudal (CC) and Mediolateral Oblique (MLO) views.",
+    findings: `BREAST DENSITY: Fibroglandular density is scattered (BI-RADS B).
+PARENCHYMA: Symmetrical breast parenchyma without focal mass, architectural distortion, or skin thickening.
+CALCIFICATIONS: No suspicious microcalcification clusters.
+AXILLAE: No suspicious axillary lymphadenopathy.`,
+    impression: `IMPRESSION:
+BI-RADS CATEGORY 1: NEGATIVE.
+Recommendation: Routine annual screening mammography.`
+  },
+
+  // --- PET-CT TEMPLATES ---
+  {
+    id: "pet_whole_body",
+    category: "Oncology",
+    title: "Whole Body 18F-FDG PET-CT Oncology Scan",
+    modality: "PET",
+    indication: "Oncology staging / restaging.",
+    technique: "Whole body PET-CT scan from skull base to mid-thigh acquired 60 min post 18F-FDG injection.",
+    findings: `HEAD & NECK: Physiological FDG uptake in brain parenchyma. No hypermetabolic cervical lymph nodes.
+CHEST & LUNGS: Lungs clear. No hypermetabolic pulmonary nodule or mediastinal lymphadenopathy.
+ABDOMEN & SKELETON: Physiological visceral FDG excretion. No hypermetabolic osseous metastasis.`,
+    impression: `IMPRESSION:
+1. No evidence of hypermetabolic malignant lesion or FDG-avid metastasis on whole body PET-CT.`
+  },
+
+  // --- ECHOCARDIOGRAPHY TEMPLATES ---
+  {
+    id: "echo_adult_tte",
+    category: "Cardiac",
+    title: "2D Transthoracic Echocardiogram (TTE Adult)",
+    modality: "ECHO",
+    indication: "Chest pain / Exertional dyspnea / Cardiac evaluation.",
+    technique: "Comprehensive 2D, M-mode, and Color Doppler Transthoracic Echocardiogram.",
+    findings: `LEFT VENTRICLE: Normal internal dimensions. LVEF = 62% (Preserved LV systolic function). No regional wall motion abnormality.
+VALVES: Aortic, Mitral, Tricuspid, and Pulmonary valves show normal leaflet excursion without significant regurgitation or stenosis.
+RIGHT VENTRICLE: TAPSE 2.2 cm (Normal). PASP 22 mmHg. No pericardial effusion.`,
+    impression: `IMPRESSION:
+1. Normal 2D Echo study with preserved LV ejection fraction (LVEF 62%).
+2. No valvular heart disease or pericardial effusion.`
   }
 ];
 
-// 🌟 DOT MACROS SNIPPETS
+// 🌟 DOT MACROS SNIPPETS DICTIONARY
 const DOT_MACROS = [
   { label: ".normal", text: "\nBRAIN PARENCHYMA: Symmetrical, normal grey-white differentiation. No acute infarct or hemorrhage." },
-  { label: ".chest", text: "\nLUNGS: Normal aeration. No focal consolidation, pneumothorax, or pleural effusion bilaterally." },
   { label: ".stroke", text: "\nACUTE STROKE NEGATIVE: No hyperdense MCA sign, loss of insular ribbon, or acute cytotoxic edema on DWI/ADC." },
-  { label: ".cpa", text: "\nCPA ANGLES: Bilateral cerebellopontine angles and internal auditory canals are clear. No schwannoma." },
+  { label: ".chest", text: "\nLUNGS: Normal aeration. No focal consolidation, pneumothorax, or pleural effusion bilaterally." },
+  { label: ".fracture", text: "\nOSSEOUS STRUCTURES: Bony architecture intact. No acute displaced fracture or lytic/sclerotic lesion." },
+  { label: ".appendicitis", text: "\nAPPENDIX: Normal non-dilated appendix (<6mm) without luminal distension, wall thickening, or appendicolith." },
+  { label: ".covid", text: "\nCOVID-19 HRCT CORADS 1: No bilateral peripheral ground-glass opacities or subpleural consolidations." },
+  { label: ".echo", text: "\nLV FUNCTION: Good LV systolic function with LVEF = 62%. No regional wall motion abnormality." },
+  { label: ".mammo", text: "\nBI-RADS 1 NEGATIVE: Symmetrical breast parenchyma without suspicious mass or microcalcification clusters." },
+  { label: ".pet", text: "\nPET-CT NEGATIVE: Normal physiological FDG biodistribution. No hypermetabolic neoplastic focus." },
   { label: ".birads1", text: "\nBI-RADS CATEGORY 1: Negative. Symmetrical fibroglandular density without focal mass or microcalcification." },
   { label: ".fetal", text: "\nFETAL ANOMALY SCAN: Single live fetus. Normal fetal biometry (BPD, HC, AC, FL) & 4-chamber heart." },
-  { label: ".dvt", text: "\nVENOUS DOPPLER: Fully compressible deep veins of lower extremity without luminal thrombus." }
+  { label: ".dvt", text: "\nVENOUS DOPPLER: Fully compressible deep veins of lower extremity without luminal thrombus." },
+  { label: ".cpa", text: "\nCPA ANGLES: Bilateral cerebellopontine angles and internal auditory canals clear. No schwannoma." },
+  { label: ".kub", text: "\nURINARY KUB: No radiopaque calculus in kidneys, ureters, or urinary bladder." },
+  { label: ".mrcp", text: "\nMRCP BILIARY TREE: Normal intrahepatic biliary channels and main pancreatic duct caliber." },
+  { label: ".thyroid", text: "\nTHYROID ULTRASOUND: Symmetrical thyroid lobes with homogeneous echotexture. No TI-RADS suspicious nodule." }
 ];
 
 export default function DiagnosticWorkstationV3({ study: propStudy, onClose, initialMode = "SPLIT" }) {
@@ -192,27 +355,54 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
   const [brightness, setBrightness] = useState(1.0);
   const [contrast, setContrast] = useState(1.0);
 
-  // REPORTING STUDIO STATES
+  // REPORTING STUDIO STATES & TEMPLATES
+  const [templatesList, setTemplatesList] = useState(COMPREHENSIVE_TEMPLATES);
+  const [selectedModalityFilter, setSelectedModalityFilter] = useState("ALL");
   const [reportHeading, setReportHeading] = useState("RADIOLOGY DIAGNOSTIC REPORT");
   const [clinicalIndication, setClinicalIndication] = useState("Acute neurological deficit / cephalea.");
-  const [techniqueText, setTechniqueText] = useState(REPORT_TEMPLATES[0].technique);
-  const [findingsText, setFindingsText] = useState(REPORT_TEMPLATES[0].findings);
-  const [impressionText, setImpressionText] = useState(REPORT_TEMPLATES[0].impression);
+  const [techniqueText, setTechniqueText] = useState(COMPREHENSIVE_TEMPLATES[0].technique);
+  const [findingsText, setFindingsText] = useState(COMPREHENSIVE_TEMPLATES[0].findings);
+  const [impressionText, setImpressionText] = useState(COMPREHENSIVE_TEMPLATES[0].impression);
   const [attachedKeyImages, setAttachedKeyImages] = useState([]);
   const [isDictating, setIsDictating] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [viewerEngine, setViewerEngine] = useState("CANVAS"); // "CANVAS" | "OHIF_IFRAME"
   const [showDicomTagModal, setShowDicomTagModal] = useState(false);
+  const [showSigModal, setShowSigModal] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Update report heading when study modality changes
+  // Fetch templates & live key images on mount/study change
   useEffect(() => {
     if (study) {
       setReportHeading(study.modality === "CT" ? "CT HEAD REPORT" : `${study.modality || "RADIOLOGY"} DIAGNOSTIC REPORT`);
       setClinicalIndication(study.study_description || "Acute neurological deficit / cephalea.");
       if (Array.isArray(study.series_list) && study.series_list.length > 0) {
         setActiveSeriesList(study.series_list);
+      }
+
+      // Fetch live templates from backend
+      api.get("/api/v3/templates").then(res => {
+        if (res?.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+          setTemplatesList([...res.data.data, ...COMPREHENSIVE_TEMPLATES]);
+        }
+      }).catch(() => null);
+
+      // Fetch live key images for this study
+      const studyUid = study?.study_uid || study?.id;
+      if (studyUid) {
+        api.get(`/api/v3/key-images/${studyUid}`).then(res => {
+          if (res?.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+            setAttachedKeyImages(res.data.data.map(k => ({
+              id: k.id || `ki_${Date.now()}`,
+              series_description: k.series_description || "Key Series",
+              slice_number: k.slice_number || 1,
+              total_slices: k.total_slices || 1,
+              data_url: k.data_url || k.file_url,
+              caption: k.caption || `${k.series_description || 'Key Image'} | Slice ${k.slice_number}`
+            })));
+          }
+        }).catch(() => null);
       }
     }
   }, [study]);
@@ -248,7 +438,7 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   };
 
-  // Populate sample key images on mount
+  // Default initial key images if none returned from server
   useEffect(() => {
     if (attachedKeyImages.length === 0) {
       setAttachedKeyImages([
@@ -303,7 +493,7 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
     setAttachedKeyImages(prev => [newKi, ...prev]);
     setToastMessage(`📸 Key Image Captured & Saving to Disk...`);
 
-    // Post payload to backend for lightweight disk storage under uploads/key_images/<study_uid>/
+    // Post payload to backend for lightweight disk storage
     try {
       const res = await api.post("/api/v3/key-images/save", {
         studyUID: studyUid,
@@ -377,17 +567,17 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
   };
 
   const handleSelectTemplate = (tpl) => {
-    setReportHeading(`${tpl.modality} REPORT`);
+    setReportHeading(`${tpl.modality} ${tpl.category.toUpperCase()} REPORT`);
     setClinicalIndication(tpl.indication);
     setTechniqueText(tpl.technique);
     setFindingsText(tpl.findings);
     setImpressionText(tpl.impression);
-    setToastMessage(`⚡ Applied RadLex Template: ${tpl.title}`);
+    setToastMessage(`⚡ Applied Template: ${tpl.title}`);
     setTimeout(() => setToastMessage(""), 2000);
   };
 
   const handleAiAutoImpression = () => {
-    let aiImpression = "IMPRESSION:\n1. Normal CT brain examination.\n2. No acute intracranial hemorrhage, mass effect, or territorial acute ischemic stroke.";
+    let aiImpression = `IMPRESSION:\n1. Normal ${study?.modality || "radiology"} examination.\n2. No acute hemorrhage, mass effect, or territorial ischemia.`;
     setImpressionText(aiImpression);
     setToastMessage("✨ AI Diagnostic Impression Auto-Generated!");
     setTimeout(() => setToastMessage(""), 2200);
@@ -418,13 +608,18 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
     }
   };
 
+  const filteredTemplates = templatesList.filter(t => {
+    if (selectedModalityFilter === "ALL") return true;
+    return t.modality.toUpperCase() === selectedModalityFilter.toUpperCase();
+  });
+
   return (
     <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col overflow-hidden text-slate-100 font-sans">
       
-      {/* 👑 TOP CONTROL HEADER BAR (EXACT VENDOR SPEC) */}
+      {/* 👑 TOP CONTROL HEADER BAR */}
       <header className="px-4 py-2 bg-[#0B132B] border-b border-slate-800 flex items-center justify-between gap-3 shrink-0">
         
-        {/* Left Patient Identity Badge with Full DICOM Tags */}
+        {/* Left Patient Identity Badge */}
         <div className="flex items-center gap-2">
           <div className="px-3 py-1.5 rounded-lg bg-[#070D1B] border border-[#1E335B] flex items-center gap-2 font-mono text-xs flex-wrap">
             <span className="font-black text-amber-400 font-heading text-sm">{study?.patient_name || "PANCHAMI"}</span>
@@ -444,7 +639,7 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
           </button>
         </div>
 
-        {/* Center 5 Layout View Mode Toggles */}
+        {/* Center 5 Layout View Mode Toggles & OHIF Launcher */}
         <div className="flex items-center gap-1 bg-[#040812] p-1 rounded-xl border border-[#1E335B] text-xs">
           <button
             onClick={() => setLayoutMode("VIEWER_90")}
@@ -494,17 +689,16 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
           >
             3D MPR
           </button>
-          <button
-            onClick={() => setViewerEngine(prev => prev === "OHIF_IFRAME" ? "CANVAS" : "OHIF_IFRAME")}
-            className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all cursor-pointer border flex items-center gap-1.5 ${
-              viewerEngine === "OHIF_IFRAME"
-                ? "bg-amber-600 text-white border-amber-400 shadow-md shadow-amber-600/30"
-                : "bg-orange-950/60 text-orange-300 border-orange-800/80 hover:bg-orange-900/80"
-            }`}
-            title="Toggle Live Embedded OHIF Viewer in 50:50 Pane"
+
+          <a
+            href={getOhifViewerUrl(study)}
+            target="_blank"
+            rel="noreferrer"
+            className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-md shadow-amber-600/30"
+            title="Launch Standalone OHIF Viewer in New Tab"
           >
-            <Zap size={13} /> {viewerEngine === "OHIF_IFRAME" ? "OHIF Active" : "OHIF Engine"}
-          </button>
+            <ExternalLink size={12} /> OHIF Studio
+          </a>
         </div>
 
         {/* Right Top Action Buttons */}
@@ -514,6 +708,13 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
               {toastMessage}
             </span>
           )}
+
+          <button
+            onClick={() => setShowSigModal(true)}
+            className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-extrabold flex items-center gap-1 cursor-pointer shadow-md shadow-purple-600/30"
+          >
+            <PenTool size={13} /> Digital Signature
+          </button>
 
           <button
             onClick={captureKeyImage}
@@ -592,7 +793,7 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
                       viewerEngine === "OHIF_IFRAME" ? "bg-cyan-600 text-white shadow" : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    ⚡ Live OHIF iFrame
+                    ⚡ Embedded OHIF
                   </button>
                 </div>
               </div>
@@ -701,67 +902,74 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
                 <div className="font-extrabold text-white">{study?.patient_age || "20Y"} / {study?.patient_sex || "F"}</div>
               </div>
               <div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase">MRN Number</div>
+                <div className="font-extrabold text-orange-400">{study?.patient_mrn || study?.patient_id || "2956457"}</div>
+              </div>
+              <div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase">Accession No</div>
-                <div className="font-extrabold text-cyan-400 font-mono">{study?.id || "31174"}</div>
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-slate-400 uppercase">Referring Doctor</div>
-                <div className="font-extrabold text-white truncate">{study?.referring_physician || "Self / Desk"}</div>
+                <div className="font-extrabold text-amber-400">{study?.accession_no || study?.accession_number || study?.id || "31174"}</div>
               </div>
             </div>
 
-            {/* 2. REPORT HEADING TITLE & CLINICAL HISTORY INPUTS */}
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase block mb-1">Report Heading Title</label>
-                <input
-                  type="text"
-                  value={reportHeading}
-                  onChange={(e) => setReportHeading(e.target.value)}
-                  className="w-full p-2 bg-slate-950 border border-slate-800 rounded-lg text-white font-extrabold focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase block mb-1">Clinical History / Indication</label>
-                <input
-                  type="text"
-                  value={clinicalIndication}
-                  onChange={(e) => setClinicalIndication(e.target.value)}
-                  className="w-full p-2 bg-slate-950 border border-slate-800 rounded-lg text-white focus:border-blue-500 focus:outline-none"
-                />
+            {/* 2. REPORT TITLE & CLINICAL INDICATION */}
+            <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Report Heading Title</label>
+                  <input
+                    type="text"
+                    value={reportHeading}
+                    onChange={(e) => setReportHeading(e.target.value)}
+                    className="w-full p-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-bold text-white focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Clinical Indication</label>
+                  <input
+                    type="text"
+                    value={clinicalIndication}
+                    onChange={(e) => setClinicalIndication(e.target.value)}
+                    className="w-full p-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* 3. MODALITY QUICK PILLS & STRUCTURED TEMPLATES DROPDOWN */}
-            <div className="flex items-center justify-between gap-2 p-2 bg-slate-900/60 border border-slate-800 rounded-xl text-xs">
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase mr-1">Modality:</span>
-                {["CT", "MRI", "USG", "XRAY", "ECHO"].map(m => (
-                  <span key={m} className={`px-2 py-0.5 rounded text-[10px] font-black ${
-                    (study?.modality || "CT") === m || (m === "CT" && study?.modality === "CT") ? "bg-blue-600 text-white" : "bg-slate-950 text-slate-400 border border-slate-800"
-                  }`}>
-                    {m}
-                  </span>
-                ))}
-              </div>
-
-              {/* Template Selector Dropdown */}
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
-                  <Zap size={12} /> Load Structured Template:
+            {/* 3. MULTI-MODALITY PREDEFINED TEMPLATE SELECTOR ENGINE */}
+            <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1 uppercase tracking-wider">
+                  <Zap size={13} /> RadLex & ACR Predefined Template Engine:
                 </span>
-                <select
-                  onChange={(e) => {
-                    const tpl = REPORT_TEMPLATES.find(t => t.id === e.target.value);
-                    if (tpl) handleSelectTemplate(tpl);
-                  }}
-                  className="p-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white font-bold focus:border-blue-500 focus:outline-none"
-                >
-                  {REPORT_TEMPLATES.map(t => (
-                    <option key={t.id} value={t.id}>{t.title}</option>
+                
+                {/* Modality Filter Pills */}
+                <div className="flex items-center gap-1 overflow-x-auto">
+                  {["ALL", "CT", "MR", "CR", "US", "MG", "PET", "ECHO"].map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setSelectedModalityFilter(m)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-extrabold transition-all cursor-pointer ${
+                        selectedModalityFilter === m ? "bg-orange-600 text-white shadow-sm" : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
+                      }`}
+                    >
+                      {m}
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
+
+              {/* Template Select Dropdown */}
+              <select
+                onChange={(e) => {
+                  const tpl = templatesList.find(t => t.id === e.target.value);
+                  if (tpl) handleSelectTemplate(tpl);
+                }}
+                className="w-full p-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white font-bold focus:border-orange-500 focus:outline-none"
+              >
+                {filteredTemplates.map(t => (
+                  <option key={t.id} value={t.id}>[{t.modality}] {t.category} — {t.title}</option>
+                ))}
+              </select>
             </div>
 
             {/* 4. MEDICAL SPEECH DICTATION STUDIO BAR */}
@@ -788,7 +996,7 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
               </div>
 
               <div className="text-[10px] text-amber-300 font-mono">
-                ⚡ Web Speech Fallback | Target: <span className="font-bold text-white">Findings</span> | F2 / FootPedal
+                ⚡ Speech Engine Ready | Target: <span className="font-bold text-white">Findings</span>
               </div>
             </div>
 
@@ -800,7 +1008,7 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
                 {/* Dot Macros Bar */}
                 <div className="flex items-center gap-1 overflow-x-auto">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">Dot Macros:</span>
-                  {DOT_MACROS.map(m => (
+                  {DOT_MACROS.slice(0, 8).map(m => (
                     <button
                       key={m.label}
                       onClick={() => handleApplyMacro(m.text)}
@@ -813,10 +1021,10 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
               </div>
 
               <textarea
-                rows={9}
+                rows={8}
                 value={findingsText}
                 onChange={(e) => setFindingsText(e.target.value)}
-                className="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 font-mono leading-relaxed focus:border-blue-500 focus:outline-none"
+                className="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 font-mono leading-relaxed focus:border-orange-500 focus:outline-none"
               />
             </div>
 
@@ -863,7 +1071,7 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
                   </button>
                   <button
                     onClick={captureKeyImage}
-                    className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg text-[10px] flex items-center gap-1 cursor-pointer shadow-md shadow-cyan-600/30"
+                    className="px-2.5 py-1 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg text-[10px] flex items-center gap-1 cursor-pointer shadow-md shadow-orange-600/30"
                   >
                     <Camera size={12} /> Capture Key Image
                   </button>
@@ -934,22 +1142,6 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
                   <div className="col-span-2"><span className="text-slate-500">Study Instance UID:</span> <strong className="text-slate-400 text-[10px] break-all">{study?.study_uid || study?.id || "1.2.840.113619.2.55"}</strong></div>
                 </div>
               </div>
-
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5">
-                <div className="text-purple-400 font-extrabold uppercase text-[11px]">Raw DICOM Dictionary Tags</div>
-                {study?.dicom_tags && Object.keys(study.dicom_tags).length > 0 ? (
-                  Object.entries(study.dicom_tags).map(([key, val]) => (
-                    <div key={key} className="flex items-center justify-between border-b border-slate-900 py-1 text-[11px]">
-                      <span className="text-slate-400 font-bold">{key}:</span>
-                      <span className="text-cyan-300 font-mono text-right">{typeof val === "object" ? JSON.stringify(val) : String(val)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-slate-500 text-[11px] italic py-2">
-                    Standard DICOM 3.0 tags pre-loaded from Orthanc PACS gateway.
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className="pt-2 flex justify-end">
@@ -963,6 +1155,15 @@ export default function DiagnosticWorkstationV3({ study: propStudy, onClose, ini
           </div>
         </div>
       )}
+
+      {/* ✍️ DOCTOR DIGITAL SIGNATURE STAMP MODAL */}
+      {showSigModal && (
+        <DoctorSignatureManagerV3
+          doctorUser={{ fullName: "Dr. Alexander Smith, MD", medicalLicense: "NMC-MH-2012-08819", role: "RADIOLOGIST" }}
+          onClose={() => setShowSigModal(false)}
+        />
+      )}
+
     </div>
   );
 }
