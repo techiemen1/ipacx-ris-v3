@@ -280,30 +280,81 @@ const DOT_MACROS = [
   { label: ".thyroid", text: "\nTHYROID ULTRASOUND: Symmetrical thyroid lobes with homogeneous echotexture. No TI-RADS suspicious nodule." }
 ];
 
-const HISTORICAL_PRIOR_STUDIES = [
-  { id: "prior_1", date: "2025-04-12", modality: "CT", description: "CT Chest Non-Contrast", result: "Normal lung aeration, no consolidation." },
-  { id: "prior_2", date: "2024-11-05", modality: "CR", description: "X-Ray Chest PA View", result: "Clear lung fields, normal cardiothoracic ratio." }
-];
+const ReportingStudioV3 = ({ study: propStudy, onClose }) => {
+  const [study, setStudy] = useState(propStudy || null);
 
-const ReportingStudioV3 = ({ study, onClose }) => {
+  // Auto-fetch study from URL parameters if not provided as prop
+  useEffect(() => {
+    if (!propStudy && typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const studyParam = params.get("study") || params.get("studyUID") || params.get("study_uid") || params.get("accession");
+
+      if (studyParam) {
+        api.get("/api/v3/pacs/studies").then(res => {
+          if (res?.data?.success && Array.isArray(res.data.studies)) {
+            const found = res.data.studies.find(s => s.study_uid === studyParam || s.id === studyParam || s.accession_no === studyParam);
+            if (found) {
+              setStudy(found);
+            } else {
+              setStudy({
+                id: studyParam,
+                study_uid: studyParam,
+                patient_name: "PACS PATIENT",
+                patient_mrn: "MRN-AUTO",
+                modality: "CT",
+                study_description: "DICOM EXAMINATION",
+                accession_no: "ACC-AUTO",
+                referring_physician: "Self / Desk"
+              });
+            }
+          }
+        }).catch(() => {
+          setStudy({
+            id: studyParam,
+            study_uid: studyParam,
+            patient_name: "PACS PATIENT",
+            patient_mrn: "MRN-AUTO",
+            modality: "CT",
+            study_description: "DICOM EXAMINATION",
+            accession_no: "ACC-AUTO",
+            referring_physician: "Self / Desk"
+          });
+        });
+      } else {
+        // Fallback default demo study if no param provided
+        setStudy({
+          id: "1.2.840.113619.2.55",
+          study_uid: "1.2.840.113619.2.55",
+          patient_name: "PANCHAMI^V",
+          patient_mrn: "MRN-994102",
+          patient_age: "24Y",
+          patient_sex: "F",
+          modality: "CT",
+          study_description: "CT BRAIN NON-CONTRAST",
+          accession_no: "ACC-31174",
+          referring_physician: "Dr. Sunita Rao"
+        });
+      }
+    } else if (propStudy) {
+      setStudy(propStudy);
+    }
+  }, [propStudy]);
+
   const [templatesList, setTemplatesList] = useState(COMPREHENSIVE_TEMPLATES);
   const [selectedModalityFilter, setSelectedModalityFilter] = useState("ALL");
   const [selectedTemplate, setSelectedTemplate] = useState(COMPREHENSIVE_TEMPLATES[0]);
-  const [clinicalIndication, setClinicalIndication] = useState(study?.study_description || COMPREHENSIVE_TEMPLATES[0].indication);
+  const [clinicalIndication, setClinicalIndication] = useState(COMPREHENSIVE_TEMPLATES[0].indication);
   const [technique, setTechnique] = useState(COMPREHENSIVE_TEMPLATES[0].technique);
   const [findings, setFindings] = useState(COMPREHENSIVE_TEMPLATES[0].findings);
   const [impression, setImpression] = useState(COMPREHENSIVE_TEMPLATES[0].impression);
   const [attachedKeyImages, setAttachedKeyImages] = useState([]);
-  const [reportStatus, setReportStatus] = useState(study?.status || "DRAFT");
+  const [reportStatus, setReportStatus] = useState("DRAFT");
   
   const [isDictating, setIsDictating] = useState(false);
-  const [isCriticalAlert, setIsCriticalAlert] = useState(study?.is_stat || false);
-  const [showPriorsDrawer, setShowPriorsDrawer] = useState(false);
-  const [selectedPrior, setSelectedPrior] = useState(null);
+  const [isCriticalAlert, setIsCriticalAlert] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveToast, setSaveToast] = useState("");
-  const [copied, setCopied] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [showDicomTagModal, setShowDicomTagModal] = useState(false);
   const [showSigModal, setShowSigModal] = useState(false);
