@@ -139,6 +139,8 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
   const [isDictating, setIsDictating] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [viewerEngine, setViewerEngine] = useState("CANVAS"); // "CANVAS" | "OHIF_IFRAME"
+  const fileInputRef = useRef(null);
 
   const currentSeries = activeSeriesList[activeSeriesIndex] || activeSeriesList[0];
 
@@ -245,6 +247,41 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
     setTimeout(() => setToastMessage(""), 2200);
   };
 
+  const handleFileUploadKeyImage = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target.result;
+      const studyUid = study?.study_uid || study?.id || "1.2.840.113619.2.55";
+      const newKi = {
+        id: `ki_upload_${Date.now()}`,
+        series_description: file.name,
+        slice_number: 1,
+        total_slices: 1,
+        data_url: dataUrl,
+        caption: `Uploaded Snapshot: ${file.name}`
+      };
+      setAttachedKeyImages(prev => [newKi, ...prev]);
+      setToastMessage(`📸 Key Image ${file.name} Attached!`);
+      setTimeout(() => setToastMessage(""), 3000);
+
+      try {
+        await api.post("/api/v3/key-images/save", {
+          studyUID: studyUid,
+          seriesUID: "ser_upload",
+          sopInstanceUid: `1.2.840.inst.${Date.now()}`,
+          sliceNumber: 1,
+          modality: study?.modality || "CT",
+          seriesDescription: file.name,
+          dataUrl,
+          caption: `Uploaded Snapshot: ${file.name}`
+        }).catch(() => null);
+      } catch (err) {}
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleCiteKeyImage = (img) => {
     const refTag = `\n[Key Image Citation: ${img.series_description} - Slice ${img.slice_number}/${img.total_slices}]`;
     setFindingsText(prev => prev + refTag);
@@ -329,53 +366,55 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
           </button>
           <button
             onClick={() => setLayoutMode("SPLIT")}
-            className={`px-3 py-1 rounded-lg font-extrabold transition-all cursor-pointer ${
-              layoutMode === "SPLIT" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              layoutMode === "SPLIT" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "bg-slate-900/80 text-slate-300 border border-slate-800 hover:text-white"
             }`}
           >
             50/50 Split
           </button>
           <button
             onClick={() => setLayoutMode("STUDIO_90")}
-            className={`px-3 py-1 rounded-lg font-extrabold transition-all cursor-pointer ${
-              layoutMode === "STUDIO_90" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              layoutMode === "STUDIO_90" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "bg-slate-900/80 text-slate-300 border border-slate-800 hover:text-white"
             }`}
           >
             90% Studio
           </button>
           <button
             onClick={() => setLayoutMode("VIEWER_ONLY")}
-            className={`px-3 py-1 rounded-lg font-extrabold transition-all cursor-pointer ${
-              layoutMode === "VIEWER_ONLY" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              layoutMode === "VIEWER_ONLY" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "bg-slate-900/80 text-slate-300 border border-slate-800 hover:text-white"
             }`}
           >
             Viewer Only
           </button>
           <button
             onClick={() => setLayoutMode("STUDIO_ONLY")}
-            className={`px-3 py-1 rounded-lg font-extrabold transition-all cursor-pointer ${
-              layoutMode === "STUDIO_ONLY" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              layoutMode === "STUDIO_ONLY" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "bg-slate-900/80 text-slate-300 border border-slate-800 hover:text-white"
             }`}
           >
             Studio Only
           </button>
           <button
             onClick={() => setLayoutMode("MPR_3D")}
-            className={`px-3 py-1 rounded-lg font-extrabold transition-all cursor-pointer ${
-              layoutMode === "MPR_3D" ? "bg-purple-600 text-white shadow-sm" : "text-purple-300 hover:text-white"
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              layoutMode === "MPR_3D" ? "bg-purple-600 text-white shadow-md shadow-purple-600/30" : "bg-slate-900/80 text-purple-300 border border-purple-900/50 hover:text-white"
             }`}
           >
             3D MPR
           </button>
-          <a
-            href={getOhifViewerUrl(study)}
-            target="_blank"
-            rel="noreferrer"
-            className="px-2.5 py-1 rounded-lg font-extrabold transition-all bg-cyan-950 text-cyan-300 border border-cyan-800 hover:bg-cyan-900 text-xs flex items-center gap-1"
-            title="Launch Self-Hosted OHIF Viewer in New Tab"
+          <button
+            onClick={() => setViewerEngine(prev => prev === "OHIF_IFRAME" ? "CANVAS" : "OHIF_IFRAME")}
+            className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all cursor-pointer border flex items-center gap-1.5 ${
+              viewerEngine === "OHIF_IFRAME"
+                ? "bg-cyan-600 text-white border-cyan-400 shadow-md shadow-cyan-600/30"
+                : "bg-cyan-950/60 text-cyan-300 border-cyan-800/80 hover:bg-cyan-900/80"
+            }`}
+            title="Toggle Live Embedded OHIF Viewer in 50:50 Pane"
           >
-            <ExternalLink size={12} /> OHIF Viewer
-          </a>
+            <Zap size={13} /> {viewerEngine === "OHIF_IFRAME" ? "OHIF Active" : "OHIF Viewer"}
+          </button>
         </div>
 
         {/* Right Top Action Buttons */}
@@ -444,9 +483,28 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
           }`}>
 
             {/* TOP VIEWER TOOLBAR */}
-            <div className="px-3 py-1.5 bg-[#0D1527] border-b border-slate-800 flex items-center justify-between text-xs shrink-0">
-              <div className="font-extrabold text-blue-400 text-xs truncate">
-                Open Health Imaging Foundation
+            <div className="px-3 py-1.5 bg-[#091120] border-b border-[#1E2E48] flex items-center justify-between text-xs shrink-0">
+              <div className="flex items-center gap-2 font-extrabold text-cyan-400 text-xs truncate">
+                <Activity size={14} />
+                <span>DICOM Workstation Engine</span>
+                <div className="flex items-center gap-1 bg-[#040812] p-0.5 rounded-lg border border-[#1E2E48] text-[10px]">
+                  <button
+                    onClick={() => setViewerEngine("CANVAS")}
+                    className={`px-2 py-0.5 rounded font-bold transition-all ${
+                      viewerEngine === "CANVAS" ? "bg-cyan-600 text-white shadow" : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Series Viewport
+                  </button>
+                  <button
+                    onClick={() => setViewerEngine("OHIF_IFRAME")}
+                    className={`px-2 py-0.5 rounded font-bold transition-all ${
+                      viewerEngine === "OHIF_IFRAME" ? "bg-cyan-600 text-white shadow" : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    ⚡ Live OHIF iFrame
+                  </button>
+                </div>
               </div>
 
               {/* Quick Image Tools */}
@@ -455,7 +513,10 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
                 <button title="Magnify Zoom" className="p-1 hover:text-white"><ZoomIn size={14} /></button>
                 <button title="Pan Move" className="p-1 hover:text-white"><Move size={14} /></button>
                 <button title="Window / Level" className="p-1 hover:text-white"><Sun size={14} /></button>
-                <button onClick={captureKeyImage} title="Snapshot Key Image" className="p-1 text-blue-400 hover:text-white"><Camera size={14} /></button>
+                <button onClick={captureKeyImage} title="Snapshot Key Image" className="p-1 text-cyan-400 hover:text-white"><Camera size={14} /></button>
+                <a href={getOhifViewerUrl(study)} target="_blank" rel="noreferrer" title="Open OHIF Viewer in New Tab" className="p-1 text-cyan-400 hover:text-white">
+                  <ExternalLink size={14} />
+                </a>
               </div>
             </div>
 
@@ -464,18 +525,18 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
               
               {/* Left Series Thumbnails Strip */}
               {layoutMode !== "STUDIO_90" && (
-                <div className="w-36 bg-[#070D19] border-r border-slate-800 p-2 space-y-3 overflow-y-auto shrink-0 font-mono text-[10px]">
-                  <div className="text-[9px] font-bold text-slate-400 uppercase border-b border-slate-800 pb-1">Series Queue</div>
+                <div className="w-36 bg-[#070D19] border-r border-[#1E2E48] p-2 space-y-3 overflow-y-auto shrink-0 font-mono text-[10px]">
+                  <div className="text-[9px] font-bold text-slate-400 uppercase border-b border-[#1E2E48] pb-1">Series Queue</div>
                   {activeSeriesList.map((ser, i) => (
                     <div
                       key={ser.series_id}
                       onClick={() => setActiveSeriesIndex(i)}
                       className={`p-2 rounded-lg border cursor-pointer transition-all ${
-                        activeSeriesIndex === i ? "bg-blue-950/80 border-blue-500 text-white" : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
+                        activeSeriesIndex === i ? "bg-blue-950/80 border-cyan-500 text-white" : "bg-[#040812] border-[#1E2E48] text-slate-400 hover:border-slate-700"
                       }`}
                     >
-                      <div className="h-16 bg-slate-900 rounded mb-1 flex items-center justify-center border border-slate-800">
-                        <ImageIcon size={20} className={activeSeriesIndex === i ? "text-blue-400" : "text-slate-600"} />
+                      <div className="h-16 bg-[#091120] rounded mb-1 flex items-center justify-center border border-[#1E2E48]">
+                        <ImageIcon size={20} className={activeSeriesIndex === i ? "text-cyan-400" : "text-slate-600"} />
                       </div>
                       <div className="font-bold truncate text-slate-200">{ser.series_description}</div>
                       <div className="text-slate-400">S:{i+1} • {ser.total_slices}</div>
@@ -486,35 +547,42 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
 
               {/* Main Center DICOM Render Viewport */}
               <div className="flex-1 bg-black flex items-center justify-center relative overflow-hidden">
-                {/* SVG/Canvas High-Res DICOM Render */}
-                <div className="relative w-full h-full flex items-center justify-center p-4">
-                  <img
-                    src={generateDicomOverlaySvg(currentSeries.series_description, currentSliceNumber, currentSeries.total_slices)}
-                    alt="DICOM Slice"
-                    className="max-w-full max-h-full object-contain filter transition-all"
-                    style={{ filter: `brightness(${brightness}) contrast(${contrast})` }}
+                {viewerEngine === "OHIF_IFRAME" ? (
+                  <iframe
+                    src={getOhifViewerUrl(study)}
+                    className="w-full h-full border-0 bg-black"
+                    title="Live OHIF DICOM Viewer"
                   />
+                ) : (
+                  <div className="relative w-full h-full flex items-center justify-center p-4">
+                    <img
+                      src={generateDicomOverlaySvg(currentSeries.series_description, currentSliceNumber, currentSeries.total_slices)}
+                      alt="DICOM Slice"
+                      className="max-w-full max-h-full object-contain filter transition-all"
+                      style={{ filter: `brightness(${brightness}) contrast(${contrast})` }}
+                    />
 
-                  {/* Corner Overlays */}
-                  <div className="absolute top-4 left-4 font-mono text-xs text-blue-400 font-bold space-y-0.5 pointer-events-none">
-                    <div>{study?.patient_name || "PANCHAMI"}</div>
-                    <div className="text-slate-400 text-[11px]">{currentSeries.series_description}</div>
-                  </div>
+                    {/* Corner Overlays */}
+                    <div className="absolute top-4 left-4 font-mono text-xs text-cyan-400 font-bold space-y-0.5 pointer-events-none">
+                      <div>{study?.patient_name || "PANCHAMI"}</div>
+                      <div className="text-slate-400 text-[11px]">{currentSeries.series_description}</div>
+                    </div>
 
-                  <div className="absolute top-4 right-4 font-mono text-xs text-blue-400 font-bold text-right pointer-events-none">
-                    <div>CT HEAD</div>
-                    <div className="text-slate-400 text-[11px]">S:{activeSeriesIndex+1} • Slices: {currentSeries.total_slices}</div>
-                  </div>
+                    <div className="absolute top-4 right-4 font-mono text-xs text-cyan-400 font-bold text-right pointer-events-none">
+                      <div>{study?.modality || "CT"} HEAD</div>
+                      <div className="text-slate-400 text-[11px]">S:{activeSeriesIndex+1} • Slices: {currentSeries.total_slices}</div>
+                    </div>
 
-                  <div className="absolute bottom-4 left-4 font-mono text-xs text-slate-300 pointer-events-none">
-                    <div>WW: 148 WL: 50</div>
-                    <div>Zoom: 1.85x</div>
-                  </div>
+                    <div className="absolute bottom-4 left-4 font-mono text-xs text-slate-300 pointer-events-none">
+                      <div>WW: 148 WL: 50</div>
+                      <div>Zoom: 1.85x</div>
+                    </div>
 
-                  <div className="absolute bottom-4 right-4 font-mono text-xs text-slate-300 text-right pointer-events-none">
-                    <div>Frame i:{currentSliceNumber} (11/223)</div>
+                    <div className="absolute bottom-4 right-4 font-mono text-xs text-slate-300 text-right pointer-events-none">
+                      <div>Frame i:{currentSliceNumber} ({currentSliceNumber}/{currentSeries.total_slices || 223})</div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
             </div>
@@ -683,16 +751,29 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
             </div>
 
             {/* 7. KEY IMAGES ATTACHED DRAWER */}
-            <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-3 text-xs">
+            <div className="p-3.5 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-3 text-xs">
               <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                 <div className="font-extrabold text-white flex items-center gap-2">
-                  <ImageIcon size={14} className="text-blue-400" /> KEY IMAGES ATTACHED ({attachedKeyImages.length})
+                  <ImageIcon size={15} className="text-cyan-400" /> KEY IMAGES ATTACHED ({attachedKeyImages.length})
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUploadKeyImage}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold rounded-lg text-[10px] flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={12} /> Upload Image
+                  </button>
                   <button
                     onClick={captureKeyImage}
-                    className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-[10px] flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg text-[10px] flex items-center gap-1 cursor-pointer shadow-md shadow-cyan-600/30"
                   >
                     <Camera size={12} /> Capture Key Image
                   </button>
@@ -702,23 +783,24 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
               {/* Snapshot Cards Grid */}
               <div className="grid grid-cols-2 gap-3">
                 {attachedKeyImages.map((img) => (
-                  <div key={img.id} className="p-2 bg-slate-950 border border-slate-800 rounded-lg space-y-2 relative group">
+                  <div key={img.id} className="p-2.5 bg-[#070E1A] border border-[#1E2E48] rounded-xl space-y-2 relative group shadow-sm">
                     <button
                       onClick={() => setAttachedKeyImages(prev => prev.filter(k => k.id !== img.id))}
-                      className="absolute top-1 right-1 p-1 rounded-full bg-rose-600/80 text-white opacity-80 hover:opacity-100"
+                      className="absolute top-1.5 right-1.5 p-1 rounded-full bg-rose-600/80 text-white opacity-80 hover:opacity-100 transition-opacity z-10"
+                      title="Remove Key Image"
                     >
                       <X size={12} />
                     </button>
 
-                    <div className="h-28 bg-black rounded border border-slate-800 overflow-hidden flex items-center justify-center">
+                    <div className="h-32 bg-black rounded-lg border border-[#1E2E48] overflow-hidden flex items-center justify-center">
                       <img src={img.data_url} alt="Key Image" className="max-h-full max-w-full object-contain" />
                     </div>
 
-                    <div className="font-mono text-[10px] text-slate-300 truncate">{img.caption}</div>
+                    <div className="font-mono text-[10px] text-slate-300 truncate font-medium">{img.caption}</div>
 
                     <button
                       onClick={() => handleCiteKeyImage(img)}
-                      className="w-full py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-blue-300 rounded font-bold text-[10px] flex items-center justify-center gap-1"
+                      className="w-full py-1 bg-[#121B2D] hover:bg-[#1A2840] border border-[#1E2E48] text-cyan-300 rounded-lg font-bold text-[10px] flex items-center justify-center gap-1 cursor-pointer transition-colors"
                     >
                       <Link2 size={11} /> Cite in Report
                     </button>
