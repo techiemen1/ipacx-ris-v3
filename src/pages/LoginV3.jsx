@@ -210,43 +210,15 @@ const LoginV3 = ({ onLoginSuccess }) => {
             </div>
           </div>
 
-          {/* Quick Select Preset Accounts */}
-          <div className={`p-3 border rounded-2xl space-y-1.5 ${isLight ? "bg-slate-50 border-slate-200" : "bg-slate-950/80 border-slate-800"}`}>
-            <div className={`text-[10px] font-extrabold uppercase tracking-wider ${isLight ? "text-slate-500" : "text-slate-400"}`}>
-              Auto-Connect Preset Roles:
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { label: "🩺 Radiologist", u: "dr.smith" },
-                { label: "🔑 Admin", u: "sysadmin" },
-                { label: "📻 Technician", u: "rad.tech" },
-                { label: "💳 Billing", u: "desk.cash" },
-                { label: "👥 HR", u: "hr.care" }
-              ].map(acc => (
-                <button
-                  key={acc.u}
-                  type="button"
-                  onClick={() => setUsername(acc.u)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
-                    username === acc.u 
-                      ? "bg-cyan-600 text-white border-cyan-500 shadow-sm" 
-                      : isLight ? "bg-white text-slate-700 border-slate-200 hover:bg-slate-100" : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
-                  }`}
-                >
-                  {acc.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <button
             type="submit"
             disabled={loading}
             className="w-full py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 transition-all cursor-pointer"
           >
-            <span>{loading ? "Authenticating Session..." : "Login & Auto-Connect Workspace"}</span>
+            <span>{loading ? "Authenticating Session..." : "Secure Login to RIS/PACS"}</span>
             <ArrowRight size={16} />
           </button>
+
         </form>
 
         <div className={`pt-4 border-t text-center text-[10px] font-mono ${isLight ? "border-slate-200 text-slate-400" : "border-slate-800 text-slate-500"}`}>

@@ -13,13 +13,17 @@ import {
   Activity,
   Building,
   Save,
-  CheckCircle2
+  CheckCircle2,
+  Palette
 } from "lucide-react";
 import PacsNodeModal from "../components/AdminPortal/PacsNodeModal";
 import api from "../api/axios";
+import { useTheme } from "../utils/ThemeContext";
 
 const AdminDashboardV3 = () => {
+  const { model, setDesignModel } = useTheme();
   const [activeTab, setActiveTab] = useState("hospital_branding"); // hospital_branding | pacs_nodes | users | settings
+
   const [pacsNodes, setPacsNodes] = useState([]);
   const [showNodeModal, setShowNodeModal] = useState(false);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -237,12 +241,106 @@ const AdminDashboardV3 = () => {
               </div>
             </div>
 
+            {/* 🎨 3-MODEL CLINICAL DESIGN SYSTEM PALETTE SELECTOR */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Palette size={16} className="text-cyan-400" /> Enterprise Medical Design System Models
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">IPACX MASTER DESIGN SPEC</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Model 1: Pitch-Black Radiology */}
+                <div
+                  onClick={() => {
+                    setHospitalConfig({ ...hospitalConfig, designModel: "PITCH_BLACK" });
+                    setDesignModel("PITCH_BLACK");
+                  }}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
+                    model === "PITCH_BLACK"
+                      ? "bg-black border-[#4FE3B5] ring-2 ring-[#4FE3B5]/30 shadow-lg shadow-[#4FE3B5]/10"
+                      : "bg-black/60 border-slate-800 hover:border-slate-700"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-[#E0E6ED]">Model 1: Pitch-Black Radiology</span>
+                    {model === "PITCH_BLACK" && <CheckCircle size={14} className="text-[#4FE3B5]" />}
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-snug">
+                    Skins Factory Reading Room standard. Zero-glare pitch black canvas with Mid-Century Mint accents.
+                  </p>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="w-5 h-5 rounded-full bg-[#000000] border border-slate-700" title="Canvas #000000"></span>
+                    <span className="w-5 h-5 rounded-full bg-[#121212] border border-slate-700" title="Surface #121212"></span>
+                    <span className="w-5 h-5 rounded-full bg-[#4FE3B5]" title="Hero Mint #4FE3B5"></span>
+                    <span className="w-5 h-5 rounded-full bg-[#E0E6ED]" title="Typography #E0E6ED"></span>
+                    <span className="w-5 h-5 rounded-full bg-[#FF3B30]" title="STAT Red #FF3B30"></span>
+                  </div>
+                </div>
+
+                {/* Model 2: Deep-Blue Medical Device Shell */}
+                <div
+                  onClick={() => {
+                    setHospitalConfig({ ...hospitalConfig, designModel: "DEEP_BLUE" });
+                    setDesignModel("DEEP_BLUE");
+                  }}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
+                    model === "DEEP_BLUE"
+                      ? "bg-[#0D1B2A] border-[#778DA9] ring-2 ring-[#778DA9]/30 shadow-lg shadow-cyan-600/10"
+                      : "bg-[#0D1B2A]/60 border-slate-800 hover:border-slate-700"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-[#E0E6ED]">Model 2: Deep-Blue Medical Shell</span>
+                    {model === "DEEP_BLUE" && <CheckCircle size={14} className="text-cyan-400" />}
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-snug">
+                    GEC Designs Medical Devices UI framework. Deep navy anchor shell with steel blue data panels.
+                  </p>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="w-5 h-5 rounded-full bg-[#0D1B2A] border border-slate-700" title="Anchor Navy #0D1B2A"></span>
+                    <span className="w-5 h-5 rounded-full bg-[#1B263B]" title="Steel Blue #1B263B"></span>
+                    <span className="w-5 h-5 rounded-full bg-[#415A77]" title="Active State #415A77"></span>
+                    <span className="w-5 h-5 rounded-full bg-[#778DA9]" title="Info Sky #778DA9"></span>
+                  </div>
+                </div>
+
+                {/* Model 3: Light Mode / Hybrid Interface */}
+                <div
+                  onClick={() => {
+                    setHospitalConfig({ ...hospitalConfig, designModel: "CLINICAL_LIGHT" });
+                    setDesignModel("CLINICAL_LIGHT");
+                  }}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
+                    model === "CLINICAL_LIGHT"
+                      ? "bg-white border-[#005A9C] ring-2 ring-[#005A9C]/30 shadow-lg shadow-blue-500/10"
+                      : "bg-slate-100 border-slate-300 hover:border-slate-400"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-slate-900">Model 3: Clinical Light Hybrid</span>
+                    {model === "CLINICAL_LIGHT" && <CheckCircle size={14} className="text-[#005A9C]" />}
+                  </div>
+                  <p className="text-[10px] text-slate-600 leading-snug">
+                    Fruto Radiology Tech & Portals standard. Warm off-white canvas with WCAG 2.1 AA clinical blue actions.
+                  </p>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="w-5 h-5 rounded-full bg-[#F8F9FA] border border-slate-300" title="Warm White #F8F9FA"></span>
+                    <span className="w-5 h-5 rounded-full bg-[#005A9C]" title="Clinical Blue #005A9C"></span>
+                    <span className="w-5 h-5 rounded-full bg-[#E2F0FD] border border-blue-200" title="Soft Pill #E2F0FD"></span>
+                    <span className="w-5 h-5 rounded-full bg-[#0f172a]" title="Text #0f172a"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* DICOM & OHIF VIEWER CONFIGURATION */}
             <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-3">
               <div className="text-xs font-extrabold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
-                <Settings size={14} /> DICOM Image Viewer & Facility Theme Default
+                <Settings size={14} /> DICOM Image Viewer Base Settings
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">
                     OHIF / DICOM Viewer Base URL
@@ -271,26 +369,9 @@ const AdminDashboardV3 = () => {
                     <option value="MOBILE_LITE">📱 Mobile Lite Touch WebGL 3D Viewer</option>
                   </select>
                 </div>
-
-                <div>
-                  <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">
-                    Facility Default UI Theme Mode
-                  </label>
-                  <select
-                    value={hospitalConfig.defaultTheme || "LIGHT"}
-                    onChange={(e) => {
-                      const newTheme = e.target.value;
-                      setHospitalConfig({ ...hospitalConfig, defaultTheme: newTheme });
-                      localStorage.setItem("ipacx_theme", newTheme);
-                    }}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold text-xs focus:border-cyan-500 focus:outline-none"
-                  >
-                    <option value="LIGHT">☀️ Soft Clinical Light (Calm & Bright)</option>
-                    <option value="DARK">🌙 AI Wonder Dark Glass (Reading Room)</option>
-                  </select>
-                </div>
               </div>
             </div>
+
 
 
             <div className="pt-4 border-t border-slate-800 flex justify-end">

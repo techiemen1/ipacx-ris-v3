@@ -4,42 +4,48 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setThemeState] = useState(() => {
-    const saved = localStorage.getItem("ipacx_theme");
+  const [model, setModel] = useState(() => {
+    const saved = localStorage.getItem("ipacx_design_model");
     if (saved) return saved;
-    // Check hospital config default
     try {
-      const hospitalConfigStr = localStorage.getItem("ipacx_hospital_config");
-      if (hospitalConfigStr) {
-        const conf = JSON.parse(hospitalConfigStr);
-        if (conf.defaultTheme) return conf.defaultTheme;
+      const confStr = localStorage.getItem("ipacx_hospital_config");
+      if (confStr) {
+        const conf = JSON.parse(confStr);
+        if (conf.designModel) return conf.designModel;
       }
     } catch (e) {}
-    return "LIGHT"; // Default to Soft Clinical Light for clean healthcare aesthetic
+    return "DEEP_BLUE"; // Default to Deep-Blue Medical Device Shell
   });
 
   useEffect(() => {
-    localStorage.setItem("ipacx_theme", theme);
+    localStorage.setItem("ipacx_design_model", model);
     const root = document.documentElement;
-    if (theme === "LIGHT") {
-      root.classList.add("theme-light");
-      root.classList.remove("theme-dark");
-    } else {
-      root.classList.add("theme-dark");
-      root.classList.remove("theme-light");
-    }
-  }, [theme]);
 
-  const toggleTheme = () => {
-    setThemeState(prev => (prev === "LIGHT" ? "DARK" : "LIGHT"));
+    root.classList.remove("model-pitch-black", "model-deep-blue", "model-clinical-light", "theme-light", "theme-dark");
+
+    if (model === "PITCH_BLACK") {
+      root.classList.add("model-pitch-black", "theme-dark");
+    } else if (model === "CLINICAL_LIGHT") {
+      root.classList.add("model-clinical-light", "theme-light");
+    } else {
+      root.classList.add("model-deep-blue", "theme-dark");
+    }
+  }, [model]);
+
+  const setDesignModel = (newModel) => {
+    setModel(newModel);
   };
 
-  const setTheme = (newTheme) => {
-    setThemeState(newTheme);
+  const cycleDesignModel = () => {
+    setModel(prev => {
+      if (prev === "PITCH_BLACK") return "DEEP_BLUE";
+      if (prev === "DEEP_BLUE") return "CLINICAL_LIGHT";
+      return "PITCH_BLACK";
+    });
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ model, setDesignModel, cycleDesignModel, isLight: model === "CLINICAL_LIGHT" }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -48,9 +54,10 @@ export const ThemeProvider = ({ children }) => {
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
-    return { theme: "LIGHT", toggleTheme: () => {}, setTheme: () => {} };
+    return { model: "DEEP_BLUE", setDesignModel: () => {}, cycleDesignModel: () => {}, isLight: false };
   }
   return context;
 };
 
 export default ThemeContext;
+
