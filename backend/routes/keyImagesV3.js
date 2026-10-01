@@ -3,6 +3,9 @@ const express = require("express");
 const router = express.Router();
 const { Pool } = require("pg");
 
+const fs = require("fs");
+const path = require("path");
+
 const pool = new Pool({
   user: process.env.DB_USER || "postgres",
   host: process.env.DB_HOST || "localhost",
@@ -11,6 +14,12 @@ const pool = new Pool({
   port: parseInt(process.env.DB_PORT || "5432", 10),
   connectionTimeoutMillis: 2000
 });
+
+// Ensure uploads/key_images directory exists
+const UPLOADS_BASE_DIR = path.join(__dirname, "..", "uploads", "key_images");
+if (!fs.existsSync(UPLOADS_BASE_DIR)) {
+  fs.mkdirSync(UPLOADS_BASE_DIR, { recursive: true });
+}
 
 // In-memory fallback key image store when PostgreSQL is offline or uninitialized
 const memoryKeyImageStore = new Map();
@@ -68,6 +77,26 @@ router.post("/save", async (req, res) => {
       capturedAt: new Date().toISOString()
     };
 
+    // Save physical file on disk in backend/uploads/key_images/<studyUID>/
+    const studyDir = path.join(UPLOADS_BASE_DIR, String(studyUID).replace(/[^a-zA-Z0-9_-]/g, "_"));
+    if (!fs.existsSync(studyDir)) {
+      fs.mkdirSync(studyDir, { recursive: true });
+    }
+
+    const keyImageId = `ki_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    let savedFileName = `${keyImageId}.svg`;
+    let savedFileRelativeUrl = `/uploads/key_images/${String(studyUID).replace(/[^a-zA-Z0-9_-]/g, "_")}/${savedFileName}`;
+
+    if (dataUrl && dataUrl.startsWith("data:image/svg+xml")) {
+      const svgContent = decodeURIComponent(dataUrl.replace(/^data:image\/svg\+xml;utf8,/, ""));
+      fs.writeFileSync(path.join(studyDir, savedFileName), svgContent, "utf8");
+    } else if (dataUrl && dataUrl.startsWith("data:image/png;base64,")) {
+      savedFileName = `${keyImageId}.png`;
+      savedFileRelativeUrl = `/uploads/key_images/${String(studyUID).replace(/[^a-zA-Z0-9_-]/g, "_")}/${savedFileName}`;
+      const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
+      fs.writeFileSync(path.join(studyDir, savedFileName), base64Data, "base64");
+    }
+
     let keyImageObj = null;
 
     try {
@@ -90,22 +119,22 @@ router.post("/save", async (req, res) => {
         targetFrame,
         modality || "CT",
         seriesDescription || "Diagnostic Viewport",
-        dataUrl,
+        savedFileRelativeUrl || dataUrl,
         caption || `${seriesDescription || 'Series'} | Slice ${targetSlice}`,
         windowCenter || 1.0,
         windowWidth || 1.0,
         zoom || 1.0,
         rotation || 0,
-        JSON.stringify({ ...annotations, ...measurements, kosMetadata })
+        JSON.stringify({ ...annotations, ...measurements, kosMetadata, savedFileRelativeUrl })
       ];
 
       const { rows } = await pool.query(insertQuery, values);
-      keyImageObj = { ...rows[0], kosMetadata };
+      keyImageObj = { ...rows[0], file_url: savedFileRelativeUrl, kosMetadata };
     } catch (dbErr) {
       console.warn("[v3 Key Image Engine] DB store offline. Using memory cache fallback:", dbErr.message);
       
       keyImageObj = {
-        id: `ki_mem_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        id: keyImageId,
         study_uid: studyUID,
         series_uid: targetSeriesUid,
         sop_instance_uid: targetInstId,
@@ -113,13 +142,14 @@ router.post("/save", async (req, res) => {
         frame_number: targetFrame,
         modality: modality || "CT",
         series_description: seriesDescription || "Diagnostic Viewport",
-        data_url: dataUrl,
+        data_url: savedFileRelativeUrl || dataUrl,
+        file_url: savedFileRelativeUrl,
         caption: caption || `${seriesDescription || 'Series'} | Slice ${targetSlice}`,
         window_center: windowCenter || 1.0,
         window_width: windowWidth || 1.0,
         zoom: zoom || 1.0,
         rotation: rotation || 0,
-        annotations_json: { ...annotations, ...measurements, kosMetadata },
+        annotations_json: { ...annotations, ...measurements, kosMetadata, savedFileRelativeUrl },
         captured_at: new Date().toISOString(),
         kosMetadata
       };
@@ -130,7 +160,7 @@ router.post("/save", async (req, res) => {
       memoryKeyImageStore.get(studyUID).unshift(keyImageObj);
     }
 
-    console.log(`✅ [v3 Key Image Engine] Standardized KOS Image Saved: Study=${studyUID}, Slice=${targetSlice}`);
+    console.log(`✅ [v3 Key Image Engine] Saved to Disk (${savedFileRelativeUrl}): Study=${studyUID}, Slice=${targetSlice}`);
 
     res.json({
       success: true,

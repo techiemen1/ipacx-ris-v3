@@ -11,12 +11,17 @@ const authV3Router = require("./routes/authV3");
 const signaturesV3Router = require("./routes/signaturesV3");
 const configV3Router = require("./routes/configV3");
 
+const path = require("path");
+
 const app = express();
 const PORT = process.env.PORT || 5003;
 
 app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+// Serve static uploaded key images and attachments
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Register API v3 Routes
 app.use("/api/v3/pacs", pacsV3Router);

@@ -200,21 +200,48 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentSliceNumber, currentSeries]);
 
-  const captureKeyImage = () => {
+  const captureKeyImage = async () => {
     const totalSlices = currentSeries.total_slices || 223;
     const seriesDesc = currentSeries.series_description || "Brain 1.0 H20s";
     const caption = `${seriesDesc} | Slice ${currentSliceNumber}/${totalSlices}`;
+    const studyUid = study?.study_uid || study?.id || "1.2.840.113619.2.55";
+    const dataUrl = generateDicomOverlaySvg(seriesDesc, currentSliceNumber, totalSlices);
+
     const newKi = {
       id: `ki_${Date.now()}`,
       series_description: seriesDesc,
       slice_number: currentSliceNumber,
       total_slices: totalSlices,
-      data_url: generateDicomOverlaySvg(seriesDesc, currentSliceNumber, totalSlices),
+      data_url: dataUrl,
       caption
     };
+
     setAttachedKeyImages(prev => [newKi, ...prev]);
-    setToastMessage(`📸 Key Image Captured: ${caption}`);
-    setTimeout(() => setToastMessage(""), 2000);
+    setToastMessage(`📸 Key Image Captured & Saving to Disk...`);
+
+    // Post payload to backend for lightweight disk storage under uploads/key_images/<study_uid>/
+    try {
+      const res = await api.post("/api/v3/key-images/save", {
+        studyUID: studyUid,
+        seriesUID: currentSeries.series_id || "ser_1",
+        sopInstanceUid: `1.2.840.inst.${Date.now()}`,
+        sliceNumber: currentSliceNumber,
+        modality: study?.modality || "CT",
+        seriesDescription: seriesDesc,
+        dataUrl,
+        caption
+      }).catch(() => null);
+
+      if (res?.data?.success && res?.data?.data) {
+        setToastMessage(`💾 Key Image Saved to Disk (/uploads/key_images/)!`);
+      } else {
+        setToastMessage(`📸 Key Image Captured: ${caption}`);
+      }
+    } catch (e) {
+      setToastMessage(`📸 Key Image Captured: ${caption}`);
+    }
+
+    setTimeout(() => setToastMessage(""), 2200);
   };
 
   const handleCiteKeyImage = (img) => {

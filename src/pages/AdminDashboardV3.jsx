@@ -465,13 +465,92 @@ const AdminDashboardV3 = () => {
                   </span>
                   <button 
                     onClick={() => { setSelectedNode(node); setShowNodeModal(true); }}
-                    className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 underline"
+                    className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
                   >
                     Edit Node
                   </button>
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* 🔗 PACS DICOM VIEWER LINKS & LAUNCHER TEMPLATES CONFIGURATION */}
+          <div className="mt-6 p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+                  <Server className="text-cyan-400" size={18} /> PACS Custom DICOM Viewer Links & Launcher Protocols
+                </h3>
+                <p className="text-xs text-slate-400 font-medium">
+                  Configure dynamic URL schemes used by doctors when launching external DICOM viewers from PACS Worklist & Nodes.
+                </p>
+              </div>
+
+              <button
+                onClick={handleSaveHospitalConfig}
+                className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-cyan-600/30 transition-all cursor-pointer"
+              >
+                <Save size={14} /> Save Viewer Links
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                <label className="font-extrabold text-cyan-300 block uppercase text-[10px]">
+                  1. OHIF Web Viewer URL Format
+                </label>
+                <input
+                  type="text"
+                  value={hospitalConfig.ohifViewerUrl || "http://localhost:8043/ohif/viewer?StudyInstanceUIDs={studyUID}"}
+                  onChange={(e) => setHospitalConfig({ ...hospitalConfig, ohifViewerUrl: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-cyan-300 font-mono focus:border-cyan-500 focus:outline-none"
+                  placeholder="http://localhost:8043/ohif/viewer?StudyInstanceUIDs={studyUID}"
+                />
+                <span className="text-[10px] text-slate-400">Placeholders: <code>{`{studyUID}`}</code>, <code>{`{host}`}</code></span>
+              </div>
+
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                <label className="font-extrabold text-purple-300 block uppercase text-[10px]">
+                  2. Weasis Native Protocol Launcher URL
+                </label>
+                <input
+                  type="text"
+                  value={hospitalConfig.weasisUrl || "weasis://$dicom:get -w http://localhost:8042/wado?requestType=WADO&studyUID={studyUID}"}
+                  onChange={(e) => setHospitalConfig({ ...hospitalConfig, weasisUrl: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-purple-300 font-mono focus:border-cyan-500 focus:outline-none"
+                  placeholder="weasis://$dicom:get -w http://localhost:8042/wado?..."
+                />
+                <span className="text-[10px] text-slate-400">Supports Weasis desktop client protocol scheme.</span>
+              </div>
+
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                <label className="font-extrabold text-amber-300 block uppercase text-[10px]">
+                  3. Horos / OsiriX Mac Workstation Link
+                </label>
+                <input
+                  type="text"
+                  value={hospitalConfig.horosUrl || "osirix://?methodName=DownloadURL&URL={wadoUrl}"}
+                  onChange={(e) => setHospitalConfig({ ...hospitalConfig, horosUrl: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-amber-300 font-mono focus:border-cyan-500 focus:outline-none"
+                  placeholder="osirix://?methodName=DownloadURL..."
+                />
+                <span className="text-[10px] text-slate-400">Direct OsiriX / Horos macOS DICOM listener integration.</span>
+              </div>
+
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                <label className="font-extrabold text-emerald-300 block uppercase text-[10px]">
+                  4. Integrated 50:50 DICOM Workstation Endpoint
+                </label>
+                <input
+                  type="text"
+                  value={hospitalConfig.integratedViewerUrl || "/reporting-studio?study={studyUID}"}
+                  onChange={(e) => setHospitalConfig({ ...hospitalConfig, integratedViewerUrl: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-emerald-300 font-mono focus:border-cyan-500 focus:outline-none"
+                  placeholder="/reporting-studio?study={studyUID}"
+                />
+                <span className="text-[10px] text-slate-400">Default iPaCX dual-pane 50:50 Reporting Studio target.</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
