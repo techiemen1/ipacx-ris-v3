@@ -54,9 +54,13 @@ export const ThemeProvider = ({ children }) => {
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
-    return { model: "DEEP_BLUE", setDesignModel: () => {}, cycleDesignModel: () => {}, isLight: false };
+    return { model: "DEEP_BLUE", theme: "DEEP_BLUE", setDesignModel: () => {}, cycleDesignModel: () => {}, toggleTheme: () => {}, isLight: false };
   }
-  return context;
+  return {
+    ...context,
+    theme: context.model,
+    toggleTheme: context.cycleDesignModel
+  };
 };
 
 export default ThemeContext;

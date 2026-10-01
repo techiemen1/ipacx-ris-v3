@@ -18,7 +18,7 @@ import { ThemeProvider, useTheme } from "./utils/ThemeContext";
 
 const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
+  const { model, cycleDesignModel, isLight } = useTheme();
 
   if (location.pathname.startsWith("/v3/lite") || location.pathname === "/login" || location.pathname.startsWith("/advanced-report")) return null;
 
@@ -33,8 +33,6 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
   const showHr = role === "HR_MANAGER" || role === "ADMIN";
   const showAdmin = role === "ADMIN";
   const showSig = role === "RADIOLOGIST" || role === "ADMIN";
-
-  const isLight = theme === "LIGHT";
 
   return (
     <nav className={`${isLight ? "bg-white/90 border-slate-200 text-slate-800" : "bg-slate-900/95 border-slate-800/80 text-slate-100"} backdrop-blur-md border-b px-3 md:px-6 py-2 flex flex-wrap justify-between items-center sticky top-0 z-40 gap-2 transition-colors`}>
@@ -168,18 +166,28 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
           </button>
         )}
 
-        {/* 1-CLICK SUN / MOON THEME TOGGLE SWITCHER */}
+        {/* 3-MODEL DYNAMIC DESIGN TOGGLE SWITCHER */}
         <button
-          onClick={toggleTheme}
-          title={isLight ? "Switch to AI Wonder Dark Mode" : "Switch to Soft Clinical Light Mode"}
+          onClick={cycleDesignModel}
+          title={`Active Design Model: ${model}. Click to cycle models.`}
           className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
             isLight
               ? "bg-amber-500/10 text-amber-700 border-amber-300 hover:bg-amber-500/20"
+              : model === "PITCH_BLACK"
+              ? "bg-[#4FE3B5]/10 text-[#4FE3B5] border-[#4FE3B5]/30 hover:bg-[#4FE3B5]/20"
               : "bg-cyan-500/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/30"
           }`}
         >
-          {isLight ? <Sun size={14} className="text-amber-600" /> : <Moon size={14} className="text-cyan-400" />}
-          <span className="hidden sm:inline">{isLight ? "Clinical Light" : "AI Dark"}</span>
+          {isLight ? (
+            <Sun size={14} className="text-amber-600" />
+          ) : model === "PITCH_BLACK" ? (
+            <Moon size={14} className="text-[#4FE3B5]" />
+          ) : (
+            <Moon size={14} className="text-cyan-400" />
+          )}
+          <span className="hidden sm:inline">
+            {model === "PITCH_BLACK" ? "Pitch-Black" : model === "CLINICAL_LIGHT" ? "Clinical Light" : "Deep-Blue"}
+          </span>
         </button>
 
         {/* User Profile / Logout Badge */}
@@ -214,7 +222,7 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
 
 const MainAppContent = () => {
   const navigate = useNavigate();
-  const { theme } = useTheme();
+  const { model, isLight } = useTheme();
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("ipacx_user");
     if (saved) {
@@ -231,10 +239,8 @@ const MainAppContent = () => {
     navigate("/login");
   };
 
-  const isLight = theme === "LIGHT";
-
   return (
-    <div className={`min-h-screen flex flex-col font-sans transition-colors ${isLight ? "bg-slate-50 text-slate-900" : "bg-slate-950 text-slate-100"}`}>
+    <div className={`min-h-screen flex flex-col font-sans transition-colors ${isLight ? "bg-[#F8F9FA] text-slate-900" : model === "PITCH_BLACK" ? "bg-black text-[#E0E6ED]" : "bg-[#0D1B2A] text-[#E0E6ED]"}`}>
       <NavigationBar
         currentUser={currentUser}
         onLogout={handleLogout}
