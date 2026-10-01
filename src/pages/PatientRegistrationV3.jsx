@@ -115,45 +115,46 @@ const PatientRegistrationV3 = () => {
   };
 
   return (
-    <div className="patient-reg-v3-container p-6 bg-slate-950 text-slate-100 min-h-screen">
-      {/* Header */}
-      <header className="pb-6 border-b border-slate-800 mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/30">
-              <UserPlus size={24} />
-            </span>
-            EHR Patient Registration & ABDM ABHA Portal
-          </h1>
-          <p className="text-slate-400 text-xs mt-1 font-medium flex items-center gap-2">
-            <span>NABH & ABDM M1/M2 Compliant</span> •
-            <span className="text-cyan-400 font-bold">Gynecology, Obstetrics & Standard Radiology Worklists</span>
-          </p>
+    <div className="patient-reg-v3-container p-3 md:p-4 bg-slate-950 text-slate-100 min-h-screen space-y-3 font-sans">
+      {/* Ultra-Compact Header */}
+      <header className="bg-slate-900/80 p-2.5 px-4 rounded-xl border border-slate-800/80 backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/30">
+            <UserPlus size={16} />
+          </div>
+          <div>
+            <h1 className="text-xs md:text-sm font-black text-white tracking-tight font-heading flex items-center gap-2">
+              EHR Patient Registration & ABDM ABHA Portal
+            </h1>
+            <p className="text-[10px] text-slate-400 font-medium">
+              NABH & ABDM M1/M2 Compliant • Gynecology, Obstetrics & Standard Radiology Worklists
+            </p>
+          </div>
         </div>
 
         <button
           onClick={() => setShowAbhaModal(true)}
-          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md"
+          className="px-3 py-1.5 bg-slate-950 hover:bg-slate-900 border border-cyan-500/40 text-cyan-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm shrink-0 cursor-pointer"
         >
-          <ShieldCheck size={16} className="text-cyan-400" />
-          {abhaVerified ? "ABHA Verified (91-8842...)" : "Verify ABHA Health ID"}
+          <ShieldCheck size={14} className="text-cyan-400" />
+          <span>{abhaVerified ? "ABHA Verified (91-8842...)" : "Verify ABHA Health ID"}</span>
         </button>
       </header>
 
       {successMsg && (
-        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/10">
-          <CheckCircle2 size={18} /> {successMsg}
+        <div className="p-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-2 shadow-lg">
+          <CheckCircle2 size={15} /> {successMsg}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Form */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-slate-800 space-y-5">
-          <h2 className="text-sm font-bold text-white flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="lg:col-span-2 bg-slate-900/40 p-4 rounded-xl border border-slate-800 space-y-3 backdrop-blur-xl">
+          <h2 className="text-xs font-extrabold text-white flex items-center justify-between border-b border-slate-800 pb-2">
             <span className="flex items-center gap-2">
-              <FileText size={18} className="text-cyan-400" /> Patient Demographics, Scheme & Exam Request
+              <FileText size={15} className="text-cyan-400" /> Patient Demographics, Scheme & Exam Request
             </span>
-            <span className="text-[11px] font-bold text-slate-400">ABDM Registry v2.0</span>
+            <span className="text-[10px] font-mono text-slate-400">ABDM Registry v2.0</span>
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs font-medium">

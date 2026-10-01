@@ -56,32 +56,33 @@ const MwlManagerV3 = () => {
   };
 
   return (
-    <div className="mwl-manager-v3 p-6 bg-slate-950 text-slate-100 min-h-screen">
-      {/* Header */}
-      <header className="pb-6 border-b border-slate-800 mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/30">
-              <Radio size={24} />
-            </span>
-            DICOM Modality Worklist (MWL) Station Dispatcher
-          </h1>
-          <p className="text-slate-400 text-xs mt-1 font-medium flex items-center gap-2">
-            <span>DICOM 3.0 C-FIND SCP Compliance</span> •
-            <span className="text-purple-400 font-bold">Real-time Station AE Routing & DICOM Tags Inspector</span>
-          </p>
+    <div className="mwl-manager-v3 p-3 md:p-4 bg-slate-950 text-slate-100 min-h-screen space-y-3 font-sans">
+      {/* Ultra-Compact Header */}
+      <header className="bg-slate-900/80 p-2.5 px-4 rounded-xl border border-slate-800/80 backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30">
+            <Radio size={16} />
+          </div>
+          <div>
+            <h1 className="text-xs md:text-sm font-black text-white tracking-tight font-heading flex items-center gap-2">
+              DICOM Modality Worklist (MWL) Station Dispatcher
+            </h1>
+            <p className="text-[10px] text-slate-400 font-medium">
+              DICOM 3.0 C-FIND SCP Compliance • Real-time Station AE Routing & DICOM Tags Inspector
+            </p>
+          </div>
         </div>
 
-        <div className="flex gap-2">
-          <span className="px-3 py-1.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5">
-            <Server size={14} /> C-FIND SCP Active (Port 4243 / 8043)
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/30 text-[11px] font-bold flex items-center gap-1.5">
+            <Server size={13} /> C-FIND SCP Active (Port 4243 / 8043)
           </span>
         </div>
       </header>
 
       {dispatchMsg && (
-        <div className="mb-6 p-4 rounded-xl bg-purple-500/10 border border-purple-500/40 text-purple-300 font-bold text-sm flex items-center gap-2 shadow-lg shadow-purple-500/10">
-          <CheckCircle2 size={18} /> {dispatchMsg}
+        <div className="p-2 px-3 rounded-xl bg-purple-500/10 border border-purple-500/40 text-purple-300 font-bold text-xs flex items-center gap-2 shadow-lg">
+          <CheckCircle2 size={15} /> {dispatchMsg}
         </div>
       )}
 

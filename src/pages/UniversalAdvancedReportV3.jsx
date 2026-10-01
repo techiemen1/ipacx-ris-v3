@@ -149,6 +149,30 @@ Anatomical Survey (ISUOG 20-Point Check):
           <div className="font-bold">{reportData.impressionText}</div>
         </div>
 
+        {/* 🖼️ ATTACHED KEY DICOM IMAGES GRID ON REPORT SHEET */}
+        {reportData.keyImages && reportData.keyImages.length > 0 && (
+          <div className="pt-2 border-t border-slate-300 space-y-2">
+            <div className="font-sans font-black text-xs text-slate-900 uppercase tracking-wider">
+              Attached Key DICOM Images ({reportData.keyImages.length})
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {reportData.keyImages.map((img, idx) => (
+                <div key={img.id || idx} className="border border-slate-300 rounded-lg p-2 bg-slate-50 flex flex-col items-center gap-1 text-center">
+                  <div className="h-28 w-full bg-black rounded overflow-hidden flex items-center justify-center">
+                    <img
+                      src={img.data_url || `/api/v3/pacs/instance-preview/inst_${img.series_uid}_${img.slice_number}`}
+                      alt=""
+                      className="h-full object-contain"
+                    />
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-900 font-sans truncate max-w-full">{img.series_description || "DICOM Frame"}</div>
+                  <div className="text-[9px] font-mono text-cyan-800">Slice {img.slice_number || 1}/{img.total_slices || 24}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Doctor Digital Signature & Verification Stamp Footer */}
         <div className="pt-6 border-t-2 border-slate-900 flex justify-between items-end">
           {/* Left: Dynamic Verification QR Code */}

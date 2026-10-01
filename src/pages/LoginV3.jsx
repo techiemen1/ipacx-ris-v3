@@ -14,13 +14,13 @@ const ROLE_PRESETS = [
 
 const LoginV3 = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
-  const [selectedRole, setSelectedRole] = useState("RADIOLOGIST");
   const [username, setUsername] = useState("dr.smith");
   const [password, setPassword] = useState("••••••••••••");
   const [mfaCode, setMfaCode] = useState("881920");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [authenticatedUser, setAuthenticatedUser] = useState(null);
 
   const [hospitalInfo, setHospitalInfo] = useState({
     hospitalName: "iPaCX RADIOLOGY & DIAGNOSTIC IMAGING CENTER",
@@ -43,19 +43,42 @@ const LoginV3 = ({ onLoginSuccess }) => {
       .catch(() => null);
   }, []);
 
-  const handleSelectRolePreset = (preset) => {
-    setSelectedRole(preset.id);
-    setUsername(preset.username);
-  };
-
-  const handleCredentialsSubmit = (e) => {
+  const handleCredentialsSubmit = async (e) => {
     e.preventDefault();
-    if (!username) {
+    if (!username.trim()) {
       setErrorMsg("Please enter username");
       return;
     }
     setErrorMsg("");
-    setStep(2);
+    setLoading(true);
+
+    try {
+      // Authenticate against Backend Auth API
+      const res = await api.post("/api/v3/auth/login", {
+        username: username.trim(),
+        password
+      }).catch(() => null);
+
+      if (res?.data?.success && res?.data?.user) {
+        setAuthenticatedUser(res.data.user);
+      } else {
+        // Mock fallback lookup if API is offline
+        const u = username.toLowerCase().trim();
+        const role = u.includes("tech") ? "TECHNICIAN" : u.includes("cash") || u.includes("bill") ? "BILLING" : u.includes("hr") ? "HR_MANAGER" : u.includes("admin") ? "ADMIN" : "RADIOLOGIST";
+        const fullName = role === "RADIOLOGIST" ? "Dr. Alexander Smith, MD" : role === "ADMIN" ? "System Admin" : role === "HR_MANAGER" ? "Priya Nair (HR Manager)" : role === "TECHNICIAN" ? "Rajesh Kumar (Lead Tech)" : "Sunita Deshmukh (Billing)";
+        setAuthenticatedUser({
+          username: username.trim(),
+          role,
+          fullName,
+          medicalLicense: role === "RADIOLOGIST" ? "NMC-MH-2012-08819" : "N/A"
+        });
+      }
+      setStep(2);
+    } catch (err) {
+      setErrorMsg("Authentication failed. Please check credentials.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleMfaSubmit = (e) => {
@@ -64,32 +87,35 @@ const LoginV3 = ({ onLoginSuccess }) => {
 
     setTimeout(() => {
       setLoading(false);
-      const userPayload = {
+      const userPayload = authenticatedUser || {
         username: username.trim(),
-        role: selectedRole,
-        fullName: selectedRole === "RADIOLOGIST" ? "Dr. Alexander Smith, MD" : selectedRole === "ADMIN" ? "System Admin" : selectedRole === "HR_MANAGER" ? "Priya Nair (HR Manager)" : selectedRole === "TECHNICIAN" ? "Rajesh Kumar (Lead Tech)" : "Sunita Deshmukh (Billing)",
-        medicalLicense: selectedRole === "RADIOLOGIST" ? "NMC-MH-2012-08819" : "N/A"
+        role: "RADIOLOGIST",
+        fullName: "Dr. Alexander Smith, MD",
+        medicalLicense: "NMC-MH-2012-08819"
       };
+
+      localStorage.setItem("ipacx_user", JSON.stringify(userPayload));
 
       if (onLoginSuccess) {
         onLoginSuccess(userPayload);
       }
 
-      // Auto Sync Portal Page as per User Login Role
-      if (selectedRole === "RADIOLOGIST") {
+      // Auto Redirect to designated landing page based on user role
+      const userRole = (userPayload.role || "").toUpperCase();
+      if (userRole === "RADIOLOGIST") {
         navigate("/");
-      } else if (selectedRole === "TECHNICIAN") {
+      } else if (userRole === "TECHNICIAN") {
         navigate("/mwl-manager");
-      } else if (selectedRole === "BILLING") {
+      } else if (userRole === "BILLING") {
         navigate("/billing");
-      } else if (selectedRole === "HR_MANAGER") {
+      } else if (userRole === "HR_MANAGER") {
         navigate("/hr-users");
-      } else if (selectedRole === "ADMIN") {
+      } else if (userRole === "ADMIN") {
         navigate("/admin");
       } else {
         navigate("/");
       }
-    }, 800);
+    }, 600);
   };
 
   return (
@@ -97,14 +123,14 @@ const LoginV3 = ({ onLoginSuccess }) => {
       {/* Background Radial Glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-      <div className="max-w-lg w-full bg-slate-900/90 border border-slate-800 p-8 rounded-3xl backdrop-blur-2xl shadow-2xl relative z-10 space-y-6">
+      <div className="max-w-md w-full bg-slate-900/90 border border-slate-800/90 p-8 rounded-3xl backdrop-blur-2xl shadow-2xl relative z-10 space-y-6">
         
         {/* Dynamic Hospital Header Banner */}
         <div className="text-center space-y-2">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-xl shadow-cyan-600/30 mb-1">
-            <Building size={30} />
+          <div className="inline-flex p-3.5 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-xl shadow-cyan-600/30 mb-1">
+            <Building size={32} />
           </div>
-          <h1 className="text-xl font-black tracking-tight text-white uppercase font-heading">
+          <h1 className="text-lg font-black tracking-tight text-white uppercase font-heading">
             {hospitalInfo.hospitalName}
           </h1>
           <p className="text-xs text-cyan-400 font-bold leading-relaxed">
@@ -114,36 +140,6 @@ const LoginV3 = ({ onLoginSuccess }) => {
             iPaCX RIS/PACS Integrated Platform v3.0
           </div>
         </div>
-
-        {/* Role Quick Selector Preset Tabs */}
-        <div className="space-y-2">
-          <label className="block text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
-            Select Operating Role Preset
-          </label>
-          <div className="grid grid-cols-2 gap-2.5">
-            {ROLE_PRESETS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => handleSelectRolePreset(p)}
-                className={`p-3 rounded-2xl border text-left transition-all ${
-                  selectedRole === p.id
-                    ? "bg-cyan-500/15 border-cyan-500 text-white shadow-lg shadow-cyan-500/10"
-                    : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
-                }`}
-              >
-                <div className="font-extrabold text-xs text-slate-100">{p.label}</div>
-                <div className="text-[10px] text-cyan-400 font-mono mt-0.5">{p.roleBadge}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {errorMsg && (
-          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-bold flex items-center gap-2">
-            <AlertCircle size={16} /> {errorMsg}
-          </div>
-        )}
 
         {step === 1 ? (
           <form onSubmit={handleCredentialsSubmit} className="space-y-4 text-xs">
@@ -175,11 +171,37 @@ const LoginV3 = ({ onLoginSuccess }) => {
               </div>
             </div>
 
+            {/* Quick Fill Accounts Helper */}
+            <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-1.5">
+              <div className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Quick Fill System Accounts:</div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: "🔑 Admin", u: "sysadmin" },
+                  { label: "🩺 Radiologist MD", u: "dr.smith" },
+                  { label: "📻 Lead Tech", u: "rad.tech" },
+                  { label: "💳 Billing", u: "desk.cash" },
+                  { label: "👥 HR Manager", u: "hr.care" }
+                ].map(acc => (
+                  <button
+                    key={acc.u}
+                    type="button"
+                    onClick={() => setUsername(acc.u)}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+                      username === acc.u ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
+                    }`}
+                  >
+                    {acc.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <button
               type="submit"
+              disabled={loading}
               className="w-full py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 transition-all cursor-pointer"
             >
-              <span>Continue to 2FA Authentication</span>
+              <span>{loading ? "Authenticating Account..." : "Continue to 2FA Authentication"}</span>
               <ArrowRight size={16} />
             </button>
           </form>

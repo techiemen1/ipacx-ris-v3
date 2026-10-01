@@ -9,11 +9,21 @@ const pool = new Pool({
   database: process.env.DB_NAME || "pacsdb",
   password: process.env.DB_PASSWORD || "postgres",
   port: parseInt(process.env.DB_PORT || "5432", 10),
+  connectionTimeoutMillis: 2000
 });
+
+// In-memory fallback key image store when PostgreSQL is offline or uninitialized
+const memoryKeyImageStore = new Map();
+
+/**
+ * DICOM Key Object Selection (KOS) Standard SOP Class UID
+ * Standard: PS 3.16 Key Object Selection Document (1.2.840.10008.5.1.4.1.1.88.59)
+ */
+const DICOM_KOS_SOP_CLASS_UID = "1.2.840.10008.5.1.4.1.1.88.59";
 
 /**
  * POST /api/v3/key-images/save
- * Deterministic Key Image Capture Endpoint with Exact Ref Binding
+ * Standardized DICOM Key Image / KOS Object Capture Endpoint
  */
 router.post("/save", async (req, res) => {
   try {
@@ -28,11 +38,13 @@ router.post("/save", async (req, res) => {
       seriesDescription,
       dataUrl,
       caption,
+      keyImageReason,
       windowCenter,
       windowWidth,
       zoom,
       rotation,
-      annotations
+      annotations,
+      measurements
     } = req.body;
 
     if (!studyUID || (!sopInstanceUid && !instanceId)) {
@@ -40,46 +52,90 @@ router.post("/save", async (req, res) => {
     }
 
     const targetInstId = sopInstanceUid || instanceId;
+    const targetSeriesUid = seriesUID || "unknown_series";
     const targetSlice = sliceNumber ? parseInt(sliceNumber, 10) : 1;
     const targetFrame = frameNumber ? parseInt(frameNumber, 10) : 1;
+    const targetReason = keyImageReason || "Key Image Bookmark for Clinical Report";
 
-    // Insert into v3_key_images table with ON CONFLICT / RETURNING
-    const insertQuery = `
-      INSERT INTO v3_key_images (
-        study_uid, series_uid, sop_instance_uid, slice_number, frame_number,
-        modality, series_description, data_url, caption,
-        window_center, window_width, zoom, rotation, annotations_json
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-      RETURNING *;
-    `;
+    const kosMetadata = {
+      kosSopClassUid: DICOM_KOS_SOP_CLASS_UID,
+      referencedStudyInstanceUid: studyUID,
+      referencedSeriesInstanceUid: targetSeriesUid,
+      referencedSopInstanceUid: targetInstId,
+      frameNumber: targetFrame,
+      sliceNumber: targetSlice,
+      keyImageReason: targetReason,
+      capturedAt: new Date().toISOString()
+    };
 
-    const values = [
-      studyUID,
-      seriesUID || "unknown_series",
-      targetInstId,
-      targetSlice,
-      targetFrame,
-      modality || "CT",
-      seriesDescription || "Diagnostic Viewport",
-      dataUrl,
-      caption || `${seriesDescription || 'Series'} | Slice ${targetSlice}`,
-      windowCenter || 1.0,
-      windowWidth || 1.0,
-      zoom || 1.0,
-      rotation || 0,
-      JSON.stringify(annotations || {})
-    ];
+    let keyImageObj = null;
 
-    const { rows } = await pool.query(insertQuery, values);
-    const keyImage = rows[0];
+    try {
+      // 1. Attempt PostgreSQL persistent storage
+      const insertQuery = `
+        INSERT INTO v3_key_images (
+          study_uid, series_uid, sop_instance_uid, slice_number, frame_number,
+          modality, series_description, data_url, caption,
+          window_center, window_width, zoom, rotation, annotations_json
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        RETURNING *;
+      `;
 
-    console.log(`[v3 Key Image Engine] Key image saved successfully: ID=${keyImage.id}, Slice=${keyImage.slice_number}`);
+      const values = [
+        studyUID,
+        targetSeriesUid,
+        targetInstId,
+        targetSlice,
+        targetFrame,
+        modality || "CT",
+        seriesDescription || "Diagnostic Viewport",
+        dataUrl,
+        caption || `${seriesDescription || 'Series'} | Slice ${targetSlice}`,
+        windowCenter || 1.0,
+        windowWidth || 1.0,
+        zoom || 1.0,
+        rotation || 0,
+        JSON.stringify({ ...annotations, ...measurements, kosMetadata })
+      ];
+
+      const { rows } = await pool.query(insertQuery, values);
+      keyImageObj = { ...rows[0], kosMetadata };
+    } catch (dbErr) {
+      console.warn("[v3 Key Image Engine] DB store offline. Using memory cache fallback:", dbErr.message);
+      
+      keyImageObj = {
+        id: `ki_mem_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        study_uid: studyUID,
+        series_uid: targetSeriesUid,
+        sop_instance_uid: targetInstId,
+        slice_number: targetSlice,
+        frame_number: targetFrame,
+        modality: modality || "CT",
+        series_description: seriesDescription || "Diagnostic Viewport",
+        data_url: dataUrl,
+        caption: caption || `${seriesDescription || 'Series'} | Slice ${targetSlice}`,
+        window_center: windowCenter || 1.0,
+        window_width: windowWidth || 1.0,
+        zoom: zoom || 1.0,
+        rotation: rotation || 0,
+        annotations_json: { ...annotations, ...measurements, kosMetadata },
+        captured_at: new Date().toISOString(),
+        kosMetadata
+      };
+
+      if (!memoryKeyImageStore.has(studyUID)) {
+        memoryKeyImageStore.set(studyUID, []);
+      }
+      memoryKeyImageStore.get(studyUID).unshift(keyImageObj);
+    }
+
+    console.log(`✅ [v3 Key Image Engine] Standardized KOS Image Saved: Study=${studyUID}, Slice=${targetSlice}`);
 
     res.json({
       success: true,
-      message: "Key image saved successfully",
-      data: keyImage
+      message: "Standardized DICOM Key Image saved successfully",
+      data: keyImageObj
     });
   } catch (err) {
     console.error("[v3 Key Image Engine] Save error:", err.message);
@@ -89,21 +145,29 @@ router.post("/save", async (req, res) => {
 
 /**
  * GET /api/v3/key-images/:studyUID
- * Fetch all attached Key Images for a Study Instance
+ * Fetch all attached DICOM Key / KOS Images for a Study Instance
  */
 router.get("/:studyUID", async (req, res) => {
   try {
     const { studyUID } = req.params;
-    const { rows } = await pool.query(
-      "SELECT * FROM v3_key_images WHERE study_uid = $1 ORDER BY captured_at DESC",
-      [studyUID]
-    );
+    let list = [];
+
+    try {
+      const { rows } = await pool.query(
+        "SELECT * FROM v3_key_images WHERE study_uid = $1 ORDER BY captured_at DESC",
+        [studyUID]
+      );
+      list = rows;
+    } catch (dbErr) {
+      console.warn("[v3 Key Image Engine] DB fetch offline. Returning memory cache:", dbErr.message);
+      list = memoryKeyImageStore.get(studyUID) || [];
+    }
 
     res.json({
       success: true,
       studyUID,
-      count: rows.length,
-      data: rows
+      count: list.length,
+      data: list
     });
   } catch (err) {
     console.error("[v3 Key Image Engine] Fetch error:", err.message);
@@ -112,3 +176,4 @@ router.get("/:studyUID", async (req, res) => {
 });
 
 module.exports = router;
+

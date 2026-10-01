@@ -101,34 +101,41 @@ const AdminDashboardV3 = () => {
   };
 
   return (
-    <div className="admin-v3-container p-6 bg-slate-950 text-slate-100 min-h-screen">
-      {/* Header Banner */}
-      <header className="flex justify-between items-center pb-6 border-b border-slate-800 mb-6">
-        <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
-            <ShieldCheck className="text-cyan-400" size={28} />
-            iPaCX RIS/PACS v3.0 Enterprise Governance
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">System Administration, Hospital Branding, PACS Nodes & Infrastructure</p>
+    <div className="admin-v3-container p-3 md:p-4 bg-slate-950 text-slate-100 min-h-screen space-y-3 font-sans">
+      {/* Ultra-Compact Header */}
+      <header className="bg-slate-900/80 p-2.5 px-4 rounded-xl border border-slate-800/80 backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/30">
+            <ShieldCheck size={16} />
+          </div>
+          <div>
+            <h1 className="text-xs md:text-sm font-black text-white tracking-tight font-heading flex items-center gap-2">
+              iPaCX RIS/PACS v3.0 Enterprise Governance
+            </h1>
+            <p className="text-[10px] text-slate-400 font-medium">
+              System Administration, Hospital Branding, PACS Nodes & Infrastructure
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
-            <Activity size={14} className="animate-pulse" />
+
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold">
+            <Activity size={13} className="animate-pulse" />
             System Health: HEALTHY
           </div>
           <button 
             onClick={fetchPacsNodes} 
-            className="p-2 rounded-lg bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 transition-colors"
+            className="p-1.5 rounded-lg bg-slate-950 border border-slate-700 hover:bg-slate-800 text-slate-300 transition-colors cursor-pointer"
             title="Refresh System"
           >
-            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
       </header>
 
       {savedSuccess && (
-        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/10">
-          <CheckCircle2 size={18} /> {savedSuccess}
+        <div className="p-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-2 shadow-lg">
+          <CheckCircle2 size={15} /> {savedSuccess}
         </div>
       )}
 
@@ -259,9 +266,11 @@ const AdminDashboardV3 = () => {
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-bold text-xs focus:border-cyan-500 focus:outline-none"
                   >
                     <option value="50:50">⚡ 50:50 Side-by-Side Dual-Pane Report Studio (Recommended)</option>
+                    <option value="WEASIS">🚀 Weasis Native DICOM Viewer (weasis:// protocol launcher)</option>
                     <option value="OHIF">🌐 External OHIF Viewer Link (http://192.168.1.7:8042/ohif/viewer)</option>
-                    <option value="MOBILE_LITE">📱 Mobile Lite Touch DICOM Viewer</option>
+                    <option value="MOBILE_LITE">📱 Mobile Lite Touch WebGL 3D Viewer</option>
                   </select>
+
                 </div>
               </div>
             </div>

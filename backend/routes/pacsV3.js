@@ -172,7 +172,23 @@ router.post("/dicom-nodes", async (req, res) => {
   }
 });
 
+/**
+ * POST /api/v3/pacs/dicom-nodes/test
+ * Test DICOM Node Connectivity via C-ECHO
+ */
+router.post("/dicom-nodes/test", async (req, res) => {
+  try {
+    const { nodeId, host, port } = req.body;
+    const result = await hybridGateway.echoDicomNode(nodeId, host, port);
+    res.json(result);
+  } catch (err) {
+    console.error("[v3 PACS API] Node Echo test error:", err.message);
+    res.status(500).json({ success: false, error: err.message, status: "OFFLINE" });
+  }
+});
+
 module.exports = router;
+
 
 
 

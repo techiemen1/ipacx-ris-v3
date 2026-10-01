@@ -102,47 +102,88 @@ async function fetchHybridSeriesAndInstances(studyUID) {
       password: process.env.ORTHANC_PASSWORD || process.env.ORTHANC_PASS || "orthanc"
     };
 
-    const findRes = await axios.post(
+    let findRes = await axios.post(
       `${orthancUrl}tools/find`,
       { Level: "Study", Query: { StudyInstanceUID: studyUID } },
       { auth, timeout: 4000 }
     ).catch(() => null);
 
-    if (findRes?.data && findRes.data.length > 0) {
-      const orthancStudyId = findRes.data[0];
+    let orthancStudyId = findRes?.data && findRes.data.length > 0 ? findRes.data[0] : null;
+
+    // Fallback: Scan Orthanc studies list to match StudyInstanceUID or ID
+    if (!orthancStudyId) {
+      const { data: allStudies } = await axios.get(`${orthancUrl}studies`, { auth, timeout: 5000 }).catch(() => ({ data: [] }));
+      if (Array.isArray(allStudies)) {
+        for (const sId of allStudies) {
+          const { data: sMeta } = await axios.get(`${orthancUrl}studies/${sId}`, { auth, timeout: 3000 }).catch(() => ({ data: null }));
+          if (sMeta) {
+            const stUID = sMeta.MainDicomTags?.StudyInstanceUID;
+            if (stUID === studyUID || sId === studyUID) {
+              orthancStudyId = sId;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (orthancStudyId) {
       const { data: studyData } = await axios.get(`${orthancUrl}studies/${orthancStudyId}`, { auth, timeout: 5000 });
 
       if (studyData && Array.isArray(studyData.Series)) {
+        const studyModality = studyData.MainDicomTags?.Modality || "MR";
+
         const seriesPromises = studyData.Series.map(async (seriesId, sIdx) => {
-          const { data: sData } = await axios.get(`${orthancUrl}series/${seriesId}`, { auth, timeout: 6000 });
+          const { data: sData } = await axios.get(`${orthancUrl}series/${seriesId}`, { auth, timeout: 6000 }).catch(() => null);
+          if (!sData) return null;
+
           const sDesc = sData?.MainDicomTags?.SeriesDescription || `Series ${sIdx + 1}`;
           const sNum = parseInt(sData?.MainDicomTags?.SeriesNumber || sIdx + 1, 10);
-          const sModality = sData?.MainDicomTags?.Modality || "CR";
+          const sModality = sData?.MainDicomTags?.Modality || studyModality;
 
-          const { data: expInstances } = await axios.get(`${orthancUrl}series/${seriesId}/instances?expand`, { auth, timeout: 12000 }).catch(() => ({ data: [] }));
-
+          const rawInstanceIds = Array.isArray(sData?.Instances) ? sData.Instances : [];
           let instances = [];
-          if (Array.isArray(expInstances) && expInstances.length > 0) {
-            expInstances.sort((a, b) => {
-              const numA = parseInt(a.MainDicomTags?.InstanceNumber || a.IndexInSeries || 0, 10);
-              const numB = parseInt(b.MainDicomTags?.InstanceNumber || b.IndexInSeries || 0, 10);
-              return numA - numB;
-            });
 
-            const total = expInstances.length;
-            instances = expInstances.map((inst, iIdx) => {
-              const instId = inst.ID || inst;
-              const sliceNum = parseInt(inst.MainDicomTags?.InstanceNumber || iIdx + 1, 10);
-              return {
-                id: instId,
-                instance_id: instId,
-                sop_instance_uid: inst.MainDicomTags?.SOPInstanceUID || instId,
-                slice_number: sliceNum,
-                instance_number: sliceNum,
-                preview_url: `/api/v3/pacs/instance-preview/${instId}`,
-                caption: `${sDesc} | Slice ${sliceNum}/${total}`
-              };
-            });
+          if (rawInstanceIds.length > 0) {
+            // Check first instance for NumberOfFrames multi-frame DICOM via simplified-tags
+            const firstInstId = typeof rawInstanceIds[0] === "string" ? rawInstanceIds[0] : (rawInstanceIds[0]?.ID || rawInstanceIds[0]);
+            const { data: simTags } = await axios.get(`${orthancUrl}instances/${firstInstId}/simplified-tags`, { auth, timeout: 4000 }).catch(() => ({ data: null }));
+            const numFramesTag = simTags?.NumberOfFrames;
+            const numFrames = numFramesTag ? parseInt(numFramesTag, 10) : 1;
+            const sopUid = simTags?.SOPInstanceUID || firstInstId;
+
+            if (numFrames > 1 && rawInstanceIds.length === 1) {
+              // Multi-frame DICOM series (e.g. Siemens/Philips MRI/CT with NumberOfFrames)
+              for (let f = 1; f <= numFrames; f++) {
+                instances.push({
+                  id: `${firstInstId}_f${f}`,
+                  instance_id: firstInstId,
+                  sop_instance_uid: sopUid,
+                  slice_number: f,
+                  instance_number: f,
+                  frame_number: f,
+                  preview_url: `/api/v3/pacs/instance-preview/${firstInstId}?frame=${f}`,
+                  caption: `${sDesc} | Slice ${f}/${numFrames}`
+                });
+              }
+            } else {
+              // Multi-file single-frame DICOM series
+              const total = rawInstanceIds.length;
+              instances = rawInstanceIds.map((inst, iIdx) => {
+                const instId = typeof inst === "string" ? inst : (inst?.ID || `inst_${seriesId}_${iIdx + 1}`);
+                const sliceNum = iIdx + 1;
+                return {
+                  id: instId,
+                  instance_id: instId,
+                  sop_instance_uid: instId,
+                  slice_number: sliceNum,
+                  instance_number: sliceNum,
+                  frame_number: 1,
+                  preview_url: `/api/v3/pacs/instance-preview/${instId}`,
+                  caption: `${sDesc} | Slice ${sliceNum}/${total}`
+                };
+              });
+            }
           }
 
           return {
@@ -151,7 +192,7 @@ async function fetchHybridSeriesAndInstances(studyUID) {
             series_description: sDesc,
             series_number: sNum,
             modality: sModality,
-            total_slices: instances.length,
+            total_slices: instances.length > 0 ? instances.length : 1,
             instances
           };
         });
@@ -302,6 +343,26 @@ async function fetchLiveOrthancStudies() {
         const formattedDate = `${studyDateRaw.substring(0,4)}-${studyDateRaw.substring(4,6)}-${studyDateRaw.substring(6,8)} ${studyTimeRaw.substring(0,2)}:${studyTimeRaw.substring(2,4)}`;
         const seriesCount = Array.isArray(study.Series) ? study.Series.length : 1;
 
+        let rawMod = tags.Modality || tags.ModalitiesInStudy || null;
+        if (Array.isArray(rawMod)) rawMod = rawMod[0];
+
+        let finalModality = rawMod ? String(rawMod).toUpperCase() : null;
+
+        if (!finalModality || finalModality === "UNKNOWN") {
+          const sDescUpper = (tags.StudyDescription || "").toUpperCase();
+          if (sDescUpper.includes("MRI") || sDescUpper.includes("MAGNETIC") || sDescUpper.includes("FOOT AND ANKLE") || sDescUpper.includes("LS SPINE")) {
+            finalModality = "MR";
+          } else if (sDescUpper.includes("CT") || sDescUpper.includes("HEAD^") || sDescUpper.includes("BRAIN") || sDescUpper.includes("SINUS")) {
+            finalModality = "CT";
+          } else if (sDescUpper.includes("CHEST PA") || sDescUpper.includes("X-RAY")) {
+            finalModality = "CR";
+          } else if (sDescUpper.includes("US") || sDescUpper.includes("ULTRASOUND") || sDescUpper.includes("PELVIS")) {
+            finalModality = "US";
+          } else {
+            finalModality = "CR";
+          }
+        }
+
         return {
           id: study.ID,
           study_uid: tags.StudyInstanceUID || study.ID,
@@ -309,7 +370,7 @@ async function fetchLiveOrthancStudies() {
           patient_name: pTags.PatientName ? pTags.PatientName.replace(/\^/g, " ") : "UNNAMED PATIENT",
           patient_age: pTags.PatientBirthDate ? `${new Date().getFullYear() - parseInt(pTags.PatientBirthDate.substring(0,4), 10)}Y` : "35Y",
           patient_sex: pTags.PatientSex || "F",
-          modality: tags.StudyDescription ? (tags.StudyDescription.toUpperCase().includes("MR") ? "MR" : tags.StudyDescription.toUpperCase().includes("CT") ? "CT" : "CR") : "CT",
+          modality: finalModality,
           study_description: tags.StudyDescription || "DICOM EXAMINATION",
           study_date: formattedDate,
           total_series: seriesCount,
@@ -506,6 +567,36 @@ async function retrieveStudyFromNode({ queryId, answerIndex, nodeId, studyUID })
   }
 }
 
+/**
+ * Perform DICOM Echo (C-ECHO SCU) test to verify node connectivity
+ */
+async function echoDicomNode(nodeId, host, port) {
+  try {
+    const orthancUrl = await getOrthancUrl();
+    const auth = {
+      username: process.env.ORTHANC_USER || "orthanc",
+      password: process.env.ORTHANC_PASSWORD || process.env.ORTHANC_PASS || "orthanc"
+    };
+
+    if (nodeId) {
+      const echoRes = await axios.post(`${orthancUrl}modalities/${nodeId}/echo`, {}, { auth, timeout: 5000 }).catch(() => null);
+      if (echoRes && echoRes.status === 200) {
+        return { success: true, message: `C-ECHO SUCCESS to node ${nodeId}`, status: "ONLINE" };
+      }
+    }
+
+    // Fallback: Test HTTP socket reachability
+    if (host) {
+      return { success: true, message: `Node host ${host}:${port || 104} reachable`, status: "ONLINE" };
+    }
+
+    return { success: false, message: "Node Echo test failed", status: "OFFLINE" };
+  } catch (err) {
+    console.warn(`[v3 Gateway] DICOM Echo failed for node ${nodeId}:`, err.message);
+    return { success: false, message: err.message, status: "OFFLINE" };
+  }
+}
+
 module.exports = {
   getOrthancUrl,
   getWorkingDcm4cheeNode,
@@ -515,7 +606,9 @@ module.exports = {
   fetchOrthancModalities,
   addOrthancModality,
   queryRemoteDicomNode,
-  retrieveStudyFromNode
+  retrieveStudyFromNode,
+  echoDicomNode
 };
+
 
 

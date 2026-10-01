@@ -164,114 +164,160 @@ const PacsQueryRetrieveV3 = () => {
     }
   };
 
+  const [viewerType, setViewerType] = useState("INTEGRATED"); // "INTEGRATED" | "MOBILE_LITE" | "WEASIS" | "OHIF"
+
+  const handleTestEcho = async (node) => {
+    try {
+      setNodeMsg(`📡 Testing DICOM Echo (C-ECHO) for ${node.aet}...`);
+      const res = await api.post("/api/v3/pacs/dicom-nodes/test", {
+        nodeId: node.id,
+        host: node.host,
+        port: node.port
+      }).catch(() => null);
+
+      if (res?.data?.success) {
+        setNodeMsg(`✅ C-ECHO SUCCESS: Node ${node.aet} @ ${node.host}:${node.port} is ONLINE`);
+        setNodes(prev => prev.map(n => n.id === node.id ? { ...n, status: "ONLINE" } : n));
+      } else {
+        setNodeMsg(`⚠️ C-ECHO WARN: Node ${node.aet} status: ${res?.data?.message || "Offline"}`);
+      }
+      setTimeout(() => setNodeMsg(""), 4000);
+    } catch (e) {
+      setNodeMsg(`❌ C-ECHO FAILED for ${node.aet}`);
+      setTimeout(() => setNodeMsg(""), 3000);
+    }
+  };
+
+  const getDicomViewerUrl = (studyUid, overrideViewer = null) => {
+    const activeViewer = overrideViewer || viewerType;
+    const host = typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost";
+    const encUID = encodeURIComponent(studyUid || "");
+
+    switch (activeViewer) {
+      case "WEASIS":
+        // Weasis DICOM Viewer URL Protocol Scheme (Supports DCM4CHEE & Orthanc WADO-RS)
+        return `weasis://$dicom:get -w "http://${host}:8042/wado?requestType=WADO&studyUID=${encUID}"`;
+      case "OHIF":
+        return `http://${host}:8043/ohif/viewer?StudyInstanceUIDs=${encUID}`;
+      case "MOBILE_LITE":
+        return `/v3/lite?study=${encUID}`;
+      case "INTEGRATED":
+      default:
+        return `/?study=${encUID}`;
+    }
+  };
+
+  const isMobileScreen = typeof window !== "undefined" && window.innerWidth < 768;
+
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 space-y-6 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-3 md:p-4 space-y-3 font-sans">
       
-      {/* 🌟 PAGE HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/60 p-6 rounded-3xl border border-slate-800/80 backdrop-blur-xl shadow-2xl">
-        <div className="flex items-center gap-4">
-          <div className="p-3.5 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-xl shadow-cyan-600/30">
-            <Server size={28} />
+      {/* 🌟 ULTRA-COMPACT PAGE HEADER & DICOM NODE BAR */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-slate-900/80 p-2.5 px-4 rounded-xl border border-slate-800/80 backdrop-blur-xl shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/30">
+            <Server size={16} />
           </div>
           <div>
-            <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2 font-heading">
+            <h1 className="text-xs md:text-sm font-black text-white tracking-tight flex items-center gap-2 font-heading">
               PACS Query / Retrieve & DICOM Fetching Gateway
             </h1>
-            <p className="text-xs text-slate-400 font-medium mt-0.5">
+            <p className="text-[10px] text-slate-400 font-medium">
               Live Orthanc DICOM Node Router • C-FIND & C-MOVE Ingest Gateway
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* DICOM NODES INLINE SELECTOR PILLS & VIEWER LAUNCHER TARGET */}
+        <div className="flex items-center gap-2 overflow-x-auto py-1">
+          {/* Preferred DICOM Viewer Launcher Target */}
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[11px]">
+            <span className="text-slate-400 font-bold px-1 text-[10px] uppercase">Viewer:</span>
+            <select
+              value={viewerType}
+              onChange={(e) => setViewerType(e.target.value)}
+              className="bg-slate-900 text-cyan-400 font-bold text-[11px] rounded px-1.5 py-0.5 outline-none cursor-pointer border border-cyan-500/30"
+            >
+              <option value="INTEGRATED">iPaCX Workstation (50:50)</option>
+              <option value="MOBILE_LITE">Mobile Lite WebGL 3D</option>
+              <option value="WEASIS">Weasis Native (weasis://)</option>
+              <option value="OHIF">Self-Hosted OHIF</option>
+            </select>
+          </div>
+
+          {nodes.map(node => (
+            <div key={node.id} className="flex items-center gap-1 bg-slate-950/90 rounded-lg p-0.5 border border-slate-800 shrink-0">
+              <button
+                onClick={() => setSelectedNode(node.id)}
+                className={`px-2 py-1 rounded-md text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  selectedNode === node.id 
+                    ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" 
+                    : "text-slate-300 hover:text-white"
+                }`}
+              >
+                <span>{node.aet}</span>
+                <span className={`px-1 py-0.2 rounded text-[8px] font-extrabold uppercase ${
+                  node.status === "ONLINE" ? "bg-emerald-500/20 text-emerald-300" : "bg-amber-500/20 text-amber-300"
+                }`}>
+                  {node.status}
+                </span>
+              </button>
+
+              <button
+                onClick={() => handleTestEcho(node)}
+                title={`Run C-ECHO ping to ${node.aet}`}
+                className="p-1 text-slate-400 hover:text-cyan-300 rounded hover:bg-slate-800 transition-colors"
+              >
+                <RefreshCw size={11} />
+              </button>
+            </div>
+          ))}
+
           <button
             onClick={() => setShowAddNodeModal(true)}
-            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-700 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-lg transition-all cursor-pointer"
+            className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-700 rounded-lg text-[11px] font-bold flex items-center gap-1 shrink-0 transition-all cursor-pointer"
           >
-            <Plus size={15} /> Add DICOM Modality Node
-          </button>
-
-          <button 
-            onClick={fetchStudies}
-            className="px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-cyan-600/30 transition-all cursor-pointer"
-          >
-            <RefreshCw size={15} className={searching ? "animate-spin" : ""} />
-            <span>Fetch Live DICOM Patients</span>
+            <Plus size={12} /> Add Node
           </button>
         </div>
       </div>
 
+
       {nodeMsg && (
-        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold text-center">
+        <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold text-center">
           {nodeMsg}
         </div>
       )}
 
-      {/* 🖥️ CONNECTED DICOM NODES GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {nodes.map(node => (
-          <div 
-            key={node.id}
-            onClick={() => setSelectedNode(node.id)}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-              selectedNode === node.id 
-                ? "bg-slate-900 border-cyan-500/50 shadow-xl shadow-cyan-500/10" 
-                : "bg-slate-900/40 border-slate-800/80 hover:border-slate-700"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-extrabold text-sm text-white font-mono">{node.aet}</span>
-              <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
-                node.status === "ONLINE" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-amber-500/10 text-amber-400 border border-amber-500/30"
-              }`}>
-                {node.status}
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400 font-mono mt-2">
-              {node.host}:{node.port} • {node.protocol}
-            </div>
-            <div className="text-[10px] text-slate-500 font-semibold mt-1 flex items-center gap-1">
-              <Radio size={12} className="text-cyan-400" /> Speed: {node.speed}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 🔍 C-FIND SEARCH QUERY FORM */}
-      <div className="bg-slate-900/50 p-5 rounded-2xl border border-slate-800/80 backdrop-blur-xl space-y-4">
-        <div className="flex items-center gap-2 text-xs font-extrabold text-slate-300 uppercase tracking-wider">
-          <Filter size={14} className="text-cyan-400" /> C-FIND Search Query Filters
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+      {/* 🔍 COMPACT C-FIND SEARCH QUERY TOOLBAR */}
+      <div className="bg-slate-900/60 p-2.5 px-4 rounded-xl border border-slate-800/80 backdrop-blur-xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-center">
           <div>
-            <label className="text-[11px] font-bold text-slate-400 block mb-1">Patient Name</label>
             <input 
               type="text"
-              placeholder="e.g. RAMYA / SARALA"
+              placeholder="Patient Name (e.g. RAMYA)"
               value={searchParams.patientName}
               onChange={(e) => setSearchParams({ ...searchParams, patientName: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500 transition-colors"
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-bold text-slate-400 block mb-1">Patient MRN</label>
             <input 
               type="text"
-              placeholder="e.g. 3271357"
+              placeholder="Patient MRN (e.g. 3271357)"
               value={searchParams.patientMrn}
               onChange={(e) => setSearchParams({ ...searchParams, patientMrn: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500 transition-colors"
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-bold text-slate-400 block mb-1">Modality</label>
             <select 
               value={searchParams.modality}
               onChange={(e) => setSearchParams({ ...searchParams, modality: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500 transition-colors"
             >
               <option value="ALL">All Modalities</option>
               <option value="MR">MR - Magnetic Resonance</option>
@@ -282,11 +328,10 @@ const PacsQueryRetrieveV3 = () => {
           </div>
 
           <div>
-            <label className="text-[11px] font-bold text-slate-400 block mb-1">Date Range</label>
             <select 
               value={searchParams.dateRange}
               onChange={(e) => setSearchParams({ ...searchParams, dateRange: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500 transition-colors"
             >
               <option value="TODAY">Today (2026-09-28)</option>
               <option value="7DAYS">Last 7 Days</option>
@@ -295,115 +340,153 @@ const PacsQueryRetrieveV3 = () => {
             </select>
           </div>
 
-          <div className="flex items-end">
+          <div>
             <button 
               onClick={fetchStudies}
-              className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 border border-slate-700 transition-all cursor-pointer"
+              className="w-full py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/30 transition-all cursor-pointer"
             >
-              <Search size={14} /> Query DICOM Nodes
+              <Search size={13} />
+              <span>Query DICOM Nodes</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* 📊 PACS QUERY RESULTS LIST TABLE */}
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl overflow-hidden shadow-2xl">
-        <div className="p-4 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between">
+      {/* 📊 PACS QUERY RESULTS LIST TABLE / MOBILE CARD VIEW */}
+      <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl overflow-hidden shadow-2xl">
+        <div className="p-3 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-extrabold text-white">
             <Database size={15} className="text-cyan-400" /> Live Orthanc PACS Results ({pacsResults.length} Patient Studies)
           </div>
-          <span className="text-[11px] font-mono text-slate-400">Target Node: ORTHANC_PACS (Port 8043)</span>
+          <span className="text-[10px] font-mono text-slate-400">Target Node: ORTHANC_PACS (Port 8043)</span>
         </div>
 
-        <table className="w-full text-left text-xs text-slate-300">
-          <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-extrabold tracking-wider border-b border-slate-800">
-            <tr>
-              <th className="px-5 py-4">Patient Information</th>
-              <th className="px-5 py-4">Modality</th>
-              <th className="px-5 py-4">Examination Description</th>
-              <th className="px-5 py-4">Series / Instances</th>
-              <th className="px-5 py-4">Source Node</th>
-              <th className="px-5 py-4">Retrieve Status</th>
-              <th className="px-5 py-4 text-right">C-MOVE & View</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/60 font-medium">
-            {pacsResults.map(item => {
-              const isFetching = fetchingIds[item.id] !== undefined;
-              const fetchPercent = fetchingIds[item.id] || 0;
+        {isMobileScreen ? (
+          /* Mobile / Tablet Patient Card Grid View */
+          <div className="p-3 grid grid-cols-1 gap-3">
+            {pacsResults.map(item => (
+              <div key={item.id} className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5 shadow-md">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="font-extrabold text-white text-sm">{item.patient_name}</h4>
+                    <span className="text-[10px] text-slate-400 font-mono">{item.patient_mrn}</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                    {item.modality}
+                  </span>
+                </div>
 
-              return (
-                <tr key={item.id} className="hover:bg-slate-800/50 transition-colors">
-                  <td className="px-5 py-4">
-                    <div className="font-extrabold text-white text-sm">{item.patient_name}</div>
-                    <div className="text-[11px] text-slate-400 font-mono">{item.patient_mrn}</div>
-                  </td>
+                <div className="text-xs text-slate-300">
+                  <div className="font-semibold">{item.study_description}</div>
+                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">{item.study_date} • {item.total_instances || 42} Slices</div>
+                </div>
 
-                  <td className="px-5 py-4">
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                      {item.modality}
-                    </span>
-                  </td>
+                <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono text-cyan-400">{item.node_source || "ORTHANC_PACS"}</span>
+                  <a
+                    href={getDicomViewerUrl(item.study_uid)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg text-xs font-extrabold inline-flex items-center gap-1.5 shadow-md"
+                  >
+                    <Eye size={13} /> View DICOM
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Desktop High-Density Table View */
+          <table className="w-full text-left text-xs text-slate-300">
+            <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] font-extrabold tracking-wider border-b border-slate-800">
+              <tr>
+                <th className="px-4 py-3">Patient Information</th>
+                <th className="px-4 py-3">Modality</th>
+                <th className="px-4 py-3">Examination Description</th>
+                <th className="px-4 py-3">Series / Instances</th>
+                <th className="px-4 py-3">Source Node</th>
+                <th className="px-4 py-3">Retrieve Status</th>
+                <th className="px-4 py-3 text-right">C-MOVE & View</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60 font-medium">
+              {pacsResults.map(item => {
+                const isFetching = fetchingIds[item.id] !== undefined;
+                const fetchPercent = fetchingIds[item.id] || 0;
 
-                  <td className="px-5 py-4">
-                    <div className="font-bold text-slate-200">{item.study_description}</div>
-                    <div className="text-[10px] text-slate-500 font-mono">{item.study_date}</div>
-                  </td>
+                return (
+                  <tr key={item.id} className="hover:bg-slate-800/50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="font-extrabold text-white text-xs md:text-sm">{item.patient_name}</div>
+                      <div className="text-[10px] text-slate-400 font-mono">{item.patient_mrn}</div>
+                    </td>
 
-                  <td className="px-5 py-4 font-mono text-slate-400">
-                    {item.total_instances || item.instances_count || 42} Slices ({item.total_series || item.series_count || 1} Series)
-                  </td>
-
-                  <td className="px-5 py-4 font-mono text-cyan-300 text-xs">
-                    {item.node_source || "ORTHANC_PACS"}
-                  </td>
-
-                  <td className="px-5 py-4">
-                    {isFetching ? (
-                      <div className="space-y-1 w-32">
-                        <div className="flex justify-between text-[10px] font-extrabold text-cyan-400">
-                          <span>Fetching...</span>
-                          <span>{fetchPercent}%</span>
-                        </div>
-                        <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-cyan-500 transition-all duration-300" style={{ width: `${fetchPercent}%` }} />
-                        </div>
-                      </div>
-                    ) : item.fetch_status === "IN_LOCAL_PACS" ? (
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold flex items-center gap-1 w-max">
-                        <CheckCircle2 size={12} /> In Local PACS
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                        {item.modality}
                       </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-semibold flex items-center gap-1 w-max">
-                        <Clock size={12} /> Available on Node
-                      </span>
-                    )}
-                  </td>
+                    </td>
 
-                  <td className="px-5 py-4 text-right space-x-2">
-                    {item.fetch_status === "AVAILABLE" && !isFetching && (
-                      <button 
-                        onClick={() => handleTriggerCMove(item.id)}
-                        className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 shadow-md shadow-cyan-600/30 transition-all cursor-pointer"
+                    <td className="px-4 py-3">
+                      <div className="font-bold text-slate-200">{item.study_description}</div>
+                      <div className="text-[10px] text-slate-500 font-mono">{item.study_date}</div>
+                    </td>
+
+                    <td className="px-4 py-3 font-mono text-slate-400 text-[11px]">
+                      {item.total_instances || item.instances_count || 42} Slices ({item.total_series || item.series_count || 1} Series)
+                    </td>
+
+                    <td className="px-4 py-3 font-mono text-cyan-300 text-[11px]">
+                      {item.node_source || "ORTHANC_PACS"}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      {isFetching ? (
+                        <div className="space-y-1 w-28">
+                          <div className="flex justify-between text-[9px] font-extrabold text-cyan-400">
+                            <span>Fetching...</span>
+                            <span>{fetchPercent}%</span>
+                          </div>
+                          <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-cyan-500 transition-all duration-300" style={{ width: `${fetchPercent}%` }} />
+                          </div>
+                        </div>
+                      ) : item.fetch_status === "IN_LOCAL_PACS" ? (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[9px] font-extrabold flex items-center gap-1 w-max">
+                          <CheckCircle2 size={11} /> In Local PACS
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 text-[9px] font-semibold flex items-center gap-1 w-max">
+                          <Clock size={11} /> Available on Node
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-4 py-3 text-right space-x-2">
+                      {item.fetch_status === "AVAILABLE" && !isFetching && (
+                        <button 
+                          onClick={() => handleTriggerCMove(item.id)}
+                          className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-extrabold inline-flex items-center gap-1 shadow-md cursor-pointer"
+                        >
+                          <Download size={12} /> C-MOVE
+                        </button>
+                      )}
+
+                      <a 
+                        href={getDicomViewerUrl(item.study_uid)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-lg text-xs font-extrabold inline-flex items-center gap-1 border border-slate-700 transition-all"
                       >
-                        <Download size={13} /> C-MOVE Fetch
-                      </button>
-                    )}
-
-                    <a 
-                      href={`/v3/lite?study=${item.study_uid}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 border border-slate-700 transition-all"
-                    >
-                      <Eye size={13} /> Instant DICOM View
-                    </a>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                        <Eye size={12} /> Instant DICOM View
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* ➕ ADD DICOM NODE MODAL */}

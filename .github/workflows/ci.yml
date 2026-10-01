@@ -27,8 +27,14 @@ jobs:
       - name: Validate Vite Frontend Build
         run: npx vite build
 
-      - name: Verify Core Backend Syntax
-        run: node -c backend/server.js
+      - name: Verify Core Backend & Routes Syntax
+        run: |
+          node -c backend/server.js
+          node -c backend/routes/authV3.js
+          node -c backend/routes/pacsV3.js
+          node -c backend/routes/reportsV3.js
+          node -c backend/services/hybridGateway.js
 
-      - name: Build Docker Services Stack
+      - name: Validate Docker Compose Configuration
         run: docker compose -f docker-compose.v3.yml config
+

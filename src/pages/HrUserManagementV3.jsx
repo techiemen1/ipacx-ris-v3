@@ -138,33 +138,34 @@ const HrUserManagementV3 = () => {
   });
 
   return (
-    <div className="hr-user-v3 p-6 bg-slate-950 text-slate-100 min-h-screen">
-      {/* Header */}
-      <header className="pb-6 border-b border-slate-800 mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/30">
-              <Users size={24} />
-            </span>
-            HR Governance & User Management Module
-          </h1>
-          <p className="text-slate-400 text-xs mt-1 font-medium flex items-center gap-2">
-            <span>Staff Roster, NMC Medical Licenses & Shift Management</span> •
-            <span className="text-indigo-400 font-bold">Role-Based Access Control (RBAC) Matrix</span>
-          </p>
+    <div className="hr-user-v3 p-3 md:p-4 bg-slate-950 text-slate-100 min-h-screen space-y-3 font-sans">
+      {/* Ultra-Compact Header */}
+      <header className="bg-slate-900/80 p-2.5 px-4 rounded-xl border border-slate-800/80 backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/30">
+            <Users size={16} />
+          </div>
+          <div>
+            <h1 className="text-xs md:text-sm font-black text-white tracking-tight font-heading flex items-center gap-2">
+              HR Governance & User Management Module
+            </h1>
+            <p className="text-[10px] text-slate-400 font-medium">
+              Staff Roster, NMC Medical Licenses & Shift Management • Role-Based Access Control (RBAC) Matrix
+            </p>
+          </div>
         </div>
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition-all"
+          className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-600/30 transition-all shrink-0 cursor-pointer"
         >
-          <UserPlus size={16} /> Onboard New Employee / Doctor
+          <UserPlus size={14} /> Onboard New Employee / Doctor
         </button>
       </header>
 
       {successBanner && (
-        <div className="mb-6 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/40 text-indigo-300 font-bold text-sm flex items-center gap-2 shadow-lg shadow-indigo-500/10">
-          <CheckCircle2 size={18} /> {successBanner}
+        <div className="p-2 px-3 rounded-xl bg-indigo-500/10 border border-indigo-500/40 text-indigo-300 font-bold text-xs flex items-center gap-2 shadow-lg">
+          <CheckCircle2 size={15} /> {successBanner}
         </div>
       )}
 

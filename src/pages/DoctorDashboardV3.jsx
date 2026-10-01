@@ -54,8 +54,11 @@ const DoctorDashboardV3 = () => {
   }, []);
 
   const getOhifViewerUrl = (study) => {
+    const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
+    const studyUid = study?.study_uid || study?.id || "";
+    let baseUrl = `http://${host}:8043/ohif/viewer`;
+
     const saved = localStorage.getItem("ipacx_hospital_config");
-    let baseUrl = "http://192.168.1.7:8042/ohif/viewer";
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -64,9 +67,9 @@ const DoctorDashboardV3 = () => {
     }
     const cleanUrl = baseUrl.trim();
     if (cleanUrl.includes("?")) {
-      return `${cleanUrl}&StudyInstanceUID=${study.study_uid || study.id}`;
+      return `${cleanUrl}&StudyInstanceUIDs=${encodeURIComponent(studyUid)}`;
     }
-    return `${cleanUrl}?StudyInstanceUID=${study.study_uid || study.id}`;
+    return `${cleanUrl}?StudyInstanceUIDs=${encodeURIComponent(studyUid)}`;
   };
 
   const fetchStudies = async () => {
@@ -169,73 +172,76 @@ const DoctorDashboardV3 = () => {
     });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 space-y-6">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-3 md:p-5 space-y-3 font-sans">
       
-      {/* 🌟 TELEMETRY KPI CARDS */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/60 p-6 rounded-3xl border border-slate-800/80 backdrop-blur-xl shadow-2xl">
-        <div className="flex items-center gap-4">
-          <div className="p-3.5 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-xl shadow-cyan-600/30">
-            <Activity size={28} />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-white tracking-tight font-heading">
-              Diagnostic Radiology Triage Studio (v3.0)
+      {/* 🌟 ULTRA-COMPACT HEADER & TELEMETRY STRIP */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/80 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-xl shadow-xl">
+        
+        {/* Title & Compact Inline Telemetry */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/30">
+              <Activity size={18} />
+            </div>
+            <h1 className="text-base font-black text-white tracking-tight font-heading">
+              Radiology Worklist
             </h1>
-            <p className="text-xs text-slate-400 font-medium mt-0.5">
-              Enterprise Radiology Information System • Real-Time AI Worklist Orchestration
-            </p>
+          </div>
+
+          <div className="h-4 w-px bg-slate-800 hidden sm:block"></div>
+
+          {/* Compact Telemetry Pills */}
+          <div className="flex items-center gap-1.5 text-xs font-bold flex-wrap">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-950 text-slate-300 border border-slate-800 flex items-center gap-1">
+              <span>Today:</span>
+              <span className="text-white font-black">{telemetry.totalToday}</span>
+            </span>
+
+            <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+              <Clock size={12} />
+              <span>Unreported:</span>
+              <span className="font-black text-amber-400">{telemetry.pendingUnreported}</span>
+            </span>
+
+            <span className="px-2.5 py-1 rounded-lg bg-red-500/10 text-red-300 border border-red-500/30 flex items-center gap-1">
+              <Zap size={12} />
+              <span>STAT:</span>
+              <span className="font-black text-red-400">{telemetry.statEmergency}</span>
+            </span>
+
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+              <CheckCircle2 size={12} />
+              <span>Finalized:</span>
+              <span className="font-black text-emerald-400">{telemetry.finalizedCount}</span>
+            </span>
+
+            <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+              <span>TAT:</span>
+              <span className="font-black text-cyan-400">{telemetry.avgTurnaroundMin}m</span>
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Action Controls */}
+        <div className="flex items-center gap-2">
           <Link
             to="/pacs-nodes"
-            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-700 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-lg transition-all"
+            className="px-3 py-1.5 bg-slate-950 hover:bg-slate-900 text-cyan-300 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
           >
-            <Database size={15} /> PACS Nodes & C-MOVE Fetch
+            <Database size={13} /> PACS Fetch
           </Link>
           <button 
             onClick={fetchStudies}
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
             title="Refresh Worklist"
           >
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
       </div>
 
-      {/* KPI METRICS BANNER */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800/80 backdrop-blur-xl">
-          <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Studies Today</div>
-          <div className="text-2xl font-black text-white font-heading mt-1">{telemetry.totalToday}</div>
-        </div>
-        <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800/80 backdrop-blur-xl">
-          <div className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 flex items-center gap-1">
-            <Clock size={12} /> Pending Unreported
-          </div>
-          <div className="text-2xl font-black text-amber-400 font-heading mt-1">{telemetry.pendingUnreported}</div>
-        </div>
-        <div className="bg-slate-900/50 p-4 rounded-2xl border border-red-500/30 backdrop-blur-xl">
-          <div className="text-[10px] font-extrabold uppercase tracking-wider text-red-400 flex items-center gap-1">
-            <Zap size={12} /> STAT Emergencies
-          </div>
-          <div className="text-2xl font-black text-red-400 font-heading mt-1">{telemetry.statEmergency}</div>
-        </div>
-        <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800/80 backdrop-blur-xl">
-          <div className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
-            <CheckCircle2 size={12} /> Finalized Reports
-          </div>
-          <div className="text-2xl font-black text-emerald-400 font-heading mt-1">{telemetry.finalizedCount}</div>
-        </div>
-        <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800/80 backdrop-blur-xl">
-          <div className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400">Avg Turnaround Time</div>
-          <div className="text-2xl font-black text-cyan-400 font-heading mt-1">{telemetry.avgTurnaroundMin} <span className="text-xs font-normal text-slate-400">mins</span></div>
-        </div>
-      </div>
-
       {/* 🔍 WORKLIST FILTERS & SEARCH */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/40 p-4 rounded-2xl border border-slate-800/80 backdrop-blur-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/40 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-xl">
         <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
           {[
             { id: "ALL", label: "All Worklist" },
@@ -416,34 +422,36 @@ const DoctorDashboardV3 = () => {
                   </td>
 
                   {/* UNIFORM REFINED ACTION BUTTONS */}
-                  <td className="px-5 py-4 text-right space-x-1.5">
-                    <button
-                      onClick={() => { setSelectedStudy(study); setShowWorkstation(true); }}
-                      className="px-2.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl text-xs font-extrabold inline-flex items-center gap-1 shadow-md shadow-cyan-600/30 transition-all cursor-pointer"
-                      title="Open 50:50 Side-by-Side Report Studio"
-                    >
-                      <FileText size={13} /> 50:50 Studio
-                    </button>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                      <button
+                        onClick={() => { setSelectedStudy(study); setShowWorkstation(true); }}
+                        className="px-2.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-extrabold inline-flex items-center gap-1 shadow-md shadow-cyan-600/30 transition-all cursor-pointer shrink-0"
+                        title="Open 50:50 Side-by-Side Report Studio"
+                      >
+                        <FileText size={13} /> 50:50 Studio
+                      </button>
 
-                    <a
-                      href={getOhifViewerUrl(study)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-extrabold inline-flex items-center gap-1 transition-all"
-                      title="Open in OHIF Viewer (http://192.168.1.7:8042/ohif/viewer)"
-                    >
-                      <ExternalLink size={13} /> OHIF
-                    </a>
+                      <a
+                        href={getOhifViewerUrl(study)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-extrabold inline-flex items-center gap-1 transition-all shrink-0"
+                        title="Open in OHIF Viewer"
+                      >
+                        <ExternalLink size={13} /> OHIF
+                      </a>
 
-                    <a
-                      href={`/v3/lite?study=${study.study_uid}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-900 text-slate-300 border border-slate-800 rounded-xl text-xs font-semibold inline-flex items-center gap-1 transition-all"
-                      title="Open Mobile DICOM Viewer"
-                    >
-                      <Smartphone size={13} /> Mobile
-                    </a>
+                      <a
+                        href={`/v3/lite?study=${study.study_uid}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2 py-1.5 bg-slate-950 hover:bg-slate-900 text-slate-300 border border-slate-800 rounded-xl text-xs font-semibold inline-flex items-center gap-1 transition-all shrink-0"
+                        title="Open Mobile DICOM Viewer"
+                      >
+                        <Smartphone size={13} /> Mobile
+                      </a>
+                    </div>
                   </td>
                 </tr>
               );

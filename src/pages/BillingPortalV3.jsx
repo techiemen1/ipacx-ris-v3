@@ -113,36 +113,37 @@ const BillingPortalV3 = () => {
   const upiString = `upi://pay?pa=ipacx@hdfcbank&pn=iPaCX%20Radiology&am=${grand.toFixed(2)}&tn=RIS-${billingForm.accessionNumber}&cu=INR`;
 
   return (
-    <div className="billing-portal-v3 p-6 bg-slate-950 text-slate-100 min-h-screen">
-      {/* Header */}
-      <header className="pb-6 border-b border-slate-800 mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/30">
-              <CreditCard size={24} />
-            </span>
-            Indian Diagnostic Billing & Online Payment Portal
-          </h1>
-          <p className="text-slate-400 text-xs mt-1 font-medium flex items-center gap-2">
-            <span>SAC Code 999312 Healthcare Standard</span> •
-            <span className="text-emerald-400 font-bold">UPI QR, Online Cards & TPA Insurance Claims</span>
-          </p>
+    <div className="billing-portal-v3 p-3 md:p-4 bg-slate-950 text-slate-100 min-h-screen space-y-3 font-sans">
+      {/* Ultra-Compact Header Banner */}
+      <header className="bg-slate-900/80 p-2.5 px-4 rounded-xl border border-slate-800/80 backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/30">
+            <CreditCard size={16} />
+          </div>
+          <div>
+            <h1 className="text-xs md:text-sm font-black text-white tracking-tight font-heading flex items-center gap-2">
+              Indian Diagnostic Billing & Online Payment Portal
+            </h1>
+            <p className="text-[10px] text-slate-400 font-medium">
+              SAC Code 999312 Healthcare Standard • UPI QR, Online Cards & TPA Insurance Claims
+            </p>
+          </div>
         </div>
 
-        <div className="flex gap-2">
-          <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5">
-            <ShieldCheck size={14} /> GSTIN: 27AAAAA0000A1Z5
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold flex items-center gap-1.5">
+            <ShieldCheck size={13} /> GSTIN: 27AAAAA0000A1Z5
           </span>
         </div>
       </header>
 
       {successBanner && (
-        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/10">
-          <CheckCircle2 size={18} /> {successBanner}
+        <div className="p-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-2 shadow-lg">
+          <CheckCircle2 size={15} /> {successBanner}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Invoice Generator Form */}
         <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
           <h2 className="text-sm font-bold text-white flex items-center justify-between border-b border-slate-800 pb-3">

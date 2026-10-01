@@ -99,13 +99,13 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
   const [layoutMode, setLayoutMode] = useState("SPLIT"); // "SPLIT" (50:50) | "VIEWER" (100%) | "REPORT" (100%)
 
   const [activeSeriesList, setActiveSeriesList] = useState([
-    { series_id: "ser_1", series_description: "OBSTETRIC 2D & COLOR DOPPLER", modality: "US", total_slices: 32 },
-    { series_id: "ser_2", series_description: "3D/4D FETAL FACE RENDER", modality: "US", total_slices: 16 },
-    { series_id: "ser_3", series_description: "TRANSVAGINAL PELVIS", modality: "US", total_slices: 24 }
+    { series_id: "ser_1", series_description: "OBSTETRIC 2D & COLOR DOPPLER", modality: "US", total_slices: 32, instances: [] },
+    { series_id: "ser_2", series_description: "3D/4D FETAL FACE RRENDER", modality: "US", total_slices: 16, instances: [] },
+    { series_id: "ser_3", series_description: "TRANSVAGINAL PELVIS", modality: "US", total_slices: 24, instances: [] }
   ]);
 
   const [activeSeriesIndex, setActiveSeriesIndex] = useState(0);
-  const [currentSliceNumber, setCurrentSliceNumber] = useState(14);
+  const [currentSliceNumber, setCurrentSliceNumber] = useState(1);
   const [isPlayingCine, setIsPlayingCine] = useState(false);
   const [attachedKeyImages, setAttachedKeyImages] = useState([]);
   const [toastMessage, setToastMessage] = useState("");
@@ -117,25 +117,91 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
 
   const [findings, setFindings] = useState("");
   const [impression, setImpression] = useState("");
-  const [aerbDoseLog, setAerbDoseLog] = useState({ dlp: "420", ctdi: "12.4" });
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState("");
 
-  const currentSeries = activeSeriesList[activeSeriesIndex] || activeSeriesList[0];
-  const canvasRef = useRef(null);
+  const currentSeries = activeSeriesList[activeSeriesIndex] || activeSeriesList[0] || { series_id: "ser_1", series_description: "SERIES 1", modality: "CT", total_slices: 24 };
 
   useEffect(() => {
-    if (study?.study_uid) {
+    if (study?.study_uid || study?.id) {
+      fetchLiveDicomSeries();
       fetchKeyImages();
+      fetchExistingReport();
     }
   }, [study]);
+
+  const fetchLiveDicomSeries = async () => {
+    try {
+      const targetUid = study?.study_uid || study?.id;
+      const res = await api.get(`/api/v3/pacs/study-series-instances/${encodeURIComponent(targetUid)}`).catch(() => null);
+      if (res?.data?.success && Array.isArray(res.data.series) && res.data.series.length > 0) {
+        setActiveSeriesList(res.data.series);
+        setActiveSeriesIndex(0);
+        setCurrentSliceNumber(1);
+      } else {
+        const mod = (study?.modality || "CT").toUpperCase();
+        if (mod === "CT") {
+          setActiveSeriesList([
+            { series_id: "ser_ct_1", series_description: "Topogram 0.6 T20f", modality: "CT", total_slices: 1, instances: [] },
+            { series_id: "ser_ct_2", series_description: "Brain 1.0 H20s", modality: "CT", total_slices: 255, instances: [] },
+            { series_id: "ser_ct_3", series_description: "Brain 1.0 H70s", modality: "CT", total_slices: 255, instances: [] }
+          ]);
+        } else if (mod === "MR") {
+          setActiveSeriesList([
+            { series_id: "ser_mr_1", series_description: "AXIAL T2 FLAIR NEURO", modality: "MR", total_slices: 32, instances: [] },
+            { series_id: "ser_mr_2", series_description: "SAGITTAL T1 SE", modality: "MR", total_slices: 28, instances: [] },
+            { series_id: "ser_mr_3", series_description: "CORONAL T2 TSE", modality: "MR", total_slices: 30, instances: [] }
+          ]);
+        } else {
+          setActiveSeriesList([
+            { series_id: "ser_us_1", series_description: "OBSTETRIC 2D & COLOR DOPPLER", modality: "US", total_slices: 32, instances: [] },
+            { series_id: "ser_us_2", series_description: "3D/4D FETAL FACE RENDER", modality: "US", total_slices: 16, instances: [] },
+            { series_id: "ser_us_3", series_description: "TRANSVAGINAL PELVIS", modality: "US", total_slices: 24, instances: [] }
+          ]);
+        }
+        setActiveSeriesIndex(0);
+        setCurrentSliceNumber(1);
+      }
+    } catch (e) {
+      console.warn("Failed to fetch live DICOM series:", e);
+    }
+  };
+
+  const fetchExistingReport = async () => {
+    try {
+      const targetUid = study?.study_uid || study?.id;
+      const res = await api.get(`/api/v3/reports/${encodeURIComponent(targetUid)}`).catch(() => null);
+      if (res?.data?.success && res?.data?.report) {
+        if (res.data.report.findings_text) setFindings(res.data.report.findings_text);
+        if (res.data.report.impression_text) setImpression(res.data.report.impression_text);
+      }
+    } catch (e) {}
+  };
+
+  const getOhifIframeUrl = () => {
+    const host = typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost";
+    const targetUid = study?.study_uid || study?.id || "1.2.840";
+    let baseUrl = `http://${host}:8043/ohif/viewer`;
+    const saved = localStorage.getItem("ipacx_hospital_config");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.ohifViewerUrl) baseUrl = parsed.ohifViewerUrl;
+      } catch (e) {}
+    }
+    const cleanUrl = baseUrl.trim();
+    return cleanUrl.includes("?") 
+      ? `${cleanUrl}&StudyInstanceUIDs=${encodeURIComponent(targetUid)}` 
+      : `${cleanUrl}?StudyInstanceUIDs=${encodeURIComponent(targetUid)}`;
+  };
 
   // CINE Animation Timer
   useEffect(() => {
     let timer = null;
-    if (isPlayingCine && currentSeries.total_slices > 1) {
+    const slices = currentSeries.total_slices || 24;
+    if (isPlayingCine && slices > 1) {
       timer = setInterval(() => {
-        setCurrentSliceNumber(prev => (prev % currentSeries.total_slices) + 1);
+        setCurrentSliceNumber(prev => (prev % slices) + 1);
       }, 150);
     }
     return () => { if (timer) clearInterval(timer); };
@@ -157,7 +223,8 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
 
   const fetchKeyImages = async () => {
     try {
-      const res = await api.get(`/api/v3/key-images/${encodeURIComponent(study.study_uid)}`).catch(() => null);
+      const targetUid = study?.study_uid || study?.id;
+      const res = await api.get(`/api/v3/key-images/${encodeURIComponent(targetUid)}`).catch(() => null);
       if (res?.data?.success && Array.isArray(res.data.data)) {
         setAttachedKeyImages(res.data.data);
       }
@@ -166,38 +233,88 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
     }
   };
 
+  const ohifIframeRef = useRef(null);
+
+  const captureCanvasFromOhif = () => {
+    try {
+      if (ohifIframeRef.current) {
+        const iframeDoc = ohifIframeRef.current.contentDocument || ohifIframeRef.current.contentWindow?.document;
+        if (iframeDoc) {
+          const canvases = iframeDoc.querySelectorAll("canvas");
+          if (canvases && canvases.length > 0) {
+            let targetCanvas = null;
+            let maxArea = 0;
+            canvases.forEach(c => {
+              const area = c.width * c.height;
+              if (area > maxArea) {
+                maxArea = area;
+                targetCanvas = c;
+              }
+            });
+
+            if (targetCanvas && targetCanvas.width > 50) {
+              const dataUrl = targetCanvas.toDataURL("image/jpeg", 0.95);
+              if (dataUrl && dataUrl.length > 200) {
+                return dataUrl;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("OHIF canvas direct capture notice:", e.message);
+    }
+    return null;
+  };
+
   const execute1ClickAutoCapture = async () => {
-    const sliceTag = `Slice ${currentSliceNumber}/${currentSeries.total_slices}`;
-    const seriesDesc = currentSeries.series_description;
+    const totalSlices = currentSeries.total_slices || 24;
+    const sliceTag = `Slice ${currentSliceNumber}/${totalSlices}`;
+    const seriesDesc = currentSeries.series_description || "DICOM SERIES";
     const fullCaption = `${seriesDesc} | ${sliceTag}`;
 
+    const activeInstance = currentSeries.instances && currentSeries.instances[currentSliceNumber - 1];
+    const liveCanvasDataUrl = captureCanvasFromOhif();
+    const finalDataUrl = liveCanvasDataUrl || activeInstance?.preview_url || `/api/v3/pacs/instance-preview/inst_${currentSeries.series_id}_${currentSliceNumber}?studyUID=${encodeURIComponent(study?.study_uid || study?.id || '')}&seriesUID=${encodeURIComponent(currentSeries.series_id)}&frame=${currentSliceNumber}`;
+
+    const uniqueId = `ki_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const currentModality = currentSeries.modality || study?.modality || "MR";
+
     const newSnapshot = {
-      id: `ki_${Date.now()}`,
-      study_uid: study?.study_uid || "1.2.840.113619.2.55",
-      series_uid: currentSeries.series_id,
+      id: uniqueId,
+      study_uid: study?.study_uid || study?.id || "1.2.840",
+      series_uid: currentSeries.series_id || "ser_1",
       series_description: seriesDesc,
       slice_number: currentSliceNumber,
-      total_slices: currentSeries.total_slices,
-      modality: currentSeries.modality,
+      total_slices: totalSlices,
+      modality: currentModality,
+      data_url: finalDataUrl,
       caption: fullCaption,
       captured_at: new Date().toISOString()
     };
 
     setAttachedKeyImages(prev => [newSnapshot, ...prev]);
 
+    // Auto-append reference into Findings text area
+    const refTag = `\n[Key Image Attached: ${fullCaption}]`;
+    if (!findings.includes(fullCaption)) {
+      setFindings(prev => (prev ? `${prev}\n${refTag}` : refTag));
+    }
+
     try {
       await api.post("/api/v3/key-images/save", {
-        studyUID: study?.study_uid || "1.2.840.113619.2.55",
-        seriesUID: currentSeries.series_id,
-        sopInstanceUid: `inst_${currentSeries.series_id}_${currentSliceNumber}`,
+        studyUID: study?.study_uid || study?.id || "1.2.840",
+        seriesUID: currentSeries.series_id || "ser_1",
+        sopInstanceUid: activeInstance?.sop_instance_uid || `inst_${currentSeries.series_id}_${currentSliceNumber}`,
         sliceNumber: currentSliceNumber,
-        modality: currentSeries.modality,
+        modality: currentModality,
         seriesDescription: seriesDesc,
+        dataUrl: finalDataUrl,
         caption: fullCaption
       }).catch(() => null);
     } catch (e) {}
 
-    setToastMessage(`✅ Auto-captured Key Image: ${sliceTag}`);
+    setToastMessage(`✅ Captured Key Image: ${fullCaption}`);
     setTimeout(() => setToastMessage(""), 2800);
   };
 
@@ -215,14 +332,15 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
     setSaveSuccess("");
     try {
       await api.post("/api/v3/reports/save", {
-        studyUID: study?.study_uid,
-        findings,
-        impression,
+        studyUID: study?.study_uid || study?.id,
+        patientMrn: study?.patient_mrn,
+        findingsText: findings,
+        impressionText: impression,
         keyImages: attachedKeyImages,
         status: "FINALIZED"
       }).catch(() => null);
 
-      setSaveSuccess("✅ Report finalized and digitally signed!");
+      setSaveSuccess("✅ Report finalized & digitally signed!");
       setTimeout(() => {
         setSaveSuccess("");
         if (onClose) onClose();
@@ -250,7 +368,7 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
                   {study?.patient_name || "CHANDRASEKHAR^V"}
                 </h2>
                 <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                  {study?.modality || "MR"}
+                  {currentSeries?.modality || study?.modality || "MR"}
                 </span>
                 <span className="text-xs text-slate-400 font-mono">
                   {study?.patient_mrn || "MRN-99812"}
@@ -304,110 +422,132 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
         {/* 🌟 50:50 DUAL-PANE BODY */}
         <div className="flex-1 flex overflow-hidden">
           
-          {/* 🖼️ LEFT PANE: 50% DICOM VIEWER */}
+          {/* 🖼️ LEFT PANE: 50% OHIF DICOM VIEWER */}
           {(layoutMode === "SPLIT" || layoutMode === "VIEWER") && (
-            <div className={`flex flex-col bg-black border-r border-slate-800 ${layoutMode === "SPLIT" ? "w-1/2" : "w-full"}`}>
+            <div className={`flex flex-col bg-black border-r border-slate-800 relative ${layoutMode === "SPLIT" ? "w-1/2" : "w-full"}`}>
               
-              {/* Series Selector & Controls Bar */}
-              <div className="p-3 bg-slate-900/80 border-b border-slate-800/80 flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2">
-                  {activeSeriesList.map((ser, idx) => (
-                    <button
-                      key={ser.series_id}
-                      onClick={() => { setActiveSeriesIndex(idx); setCurrentSliceNumber(1); }}
-                      className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all ${
-                        activeSeriesIndex === idx 
-                          ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" 
-                          : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
-                      }`}
-                    >
-                      Series {idx + 1} ({ser.total_slices})
-                    </button>
-                  ))}
-                </div>
-
-                {/* CINE Player Controls */}
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => setCurrentSliceNumber(prev => Math.max(1, prev - 1))}
-                    className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:text-white"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button 
-                    onClick={() => setIsPlayingCine(!isPlayingCine)}
-                    className="px-3 py-1 bg-cyan-600/30 border border-cyan-500/40 text-cyan-300 rounded-lg text-xs font-extrabold flex items-center gap-1"
-                  >
-                    {isPlayingCine ? <Pause size={14} /> : <Play size={14} />} CINE
-                  </button>
-                  <button 
-                    onClick={() => setCurrentSliceNumber(prev => Math.min(currentSeries.total_slices, prev + 1))}
-                    className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:text-white"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                  <span className="text-xs font-mono text-cyan-400 font-extrabold">
-                    {currentSliceNumber} / {currentSeries.total_slices}
-                  </span>
-                </div>
-              </div>
-
-              {/* Interactive DICOM Viewport Canvas */}
-              <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden p-4">
-                <div className="relative max-w-full max-h-full flex items-center justify-center">
-                  <img
-                    src={`/api/v3/pacs/instance-preview/inst_${currentSeries.series_id}_${currentSliceNumber}?frame=${currentSliceNumber}`}
-                    alt="DICOM Frame"
-                    className="max-w-full max-h-[70vh] object-contain transition-all"
-                    style={{
-                      filter: `brightness(${brightness}) contrast(${contrast}) ${isInverted ? 'invert(1)' : ''}`,
-                      transform: `scale(${zoom})`
-                    }}
-                  />
-
-                  {/* Corner DICOM Overlay Meta */}
-                  <div className="absolute top-3 left-3 font-mono text-xs text-cyan-400 text-shadow-dark pointer-events-none">
-                    <div>{study?.patient_name || "PATIENT"}</div>
-                    <div>{study?.patient_mrn}</div>
-                  </div>
-                  <div className="absolute top-3 right-3 font-mono text-xs text-cyan-400 text-right text-shadow-dark pointer-events-none">
-                    <div>{currentSeries.series_description}</div>
-                    <div>Slice: {currentSliceNumber} / {currentSeries.total_slices}</div>
-                  </div>
-                </div>
+              {/* Embedded OHIF Viewer Iframe */}
+              <div className="flex-1 bg-black relative">
+                <iframe
+                  ref={ohifIframeRef}
+                  src={getOhifIframeUrl()}
+                  title="OHIF DICOM Viewer"
+                  className="w-full h-full border-none"
+                />
 
                 {/* Toast Overlay */}
                 {toastMessage && (
-                  <div className="absolute top-6 bg-cyan-500 text-slate-950 font-black text-xs px-4 py-2 rounded-xl shadow-2xl animate-bounce border border-white">
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-cyan-500 text-slate-950 font-black text-xs px-4 py-2 rounded-xl shadow-2xl border border-white">
                     {toastMessage}
                   </div>
                 )}
               </div>
 
-              {/* Viewport Action Controls & 1-Click Key Image Capture Button */}
-              <div className="p-4 bg-slate-900/90 border-t border-slate-800 flex flex-col gap-3">
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <SlidersHorizontal size={14} className="text-cyan-400" />
-                    <span>W/L Presets:</span>
-                    <button onClick={() => { setBrightness(1.2); setContrast(1.6); }} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white text-[11px] font-semibold">Brain</button>
-                    <button onClick={() => { setBrightness(0.8); setContrast(2.2); }} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white text-[11px] font-semibold">Bone</button>
-                    <button onClick={() => { setBrightness(1.4); setContrast(0.6); }} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white text-[11px] font-semibold">Lung</button>
-                    <button onClick={() => { setBrightness(1); setContrast(1); setIsInverted(false); }} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white text-[11px] font-semibold">Reset</button>
+              {/* 🌟 INTERACTIVE KEY IMAGE SELECTOR & CAPTURE TOOLBAR */}
+              <div className="p-3 bg-slate-900 border-t border-slate-800 flex flex-col gap-2 shrink-0">
+                {/* Quick Interactive Series Pills */}
+                {activeSeriesList.length > 1 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Quick Series:</span>
+                    {activeSeriesList.map((ser, idx) => (
+                      <button
+                        key={ser.series_id || idx}
+                        onClick={() => {
+                          setActiveSeriesIndex(idx);
+                          setCurrentSliceNumber(1);
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all shrink-0 cursor-pointer ${
+                          activeSeriesIndex === idx
+                            ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
+                            : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
+                        }`}
+                      >
+                        {ser.series_description || `Series ${idx + 1}`} ({ser.total_slices || 1})
+                      </button>
+                    ))}
                   </div>
-                  <button onClick={() => setIsInverted(!isInverted)} className="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 text-[11px] font-semibold">
-                    Invert Color
-                  </button>
+                )}
+
+                <div className="flex items-center justify-between gap-2 flex-wrap text-xs font-semibold text-slate-300">
+                  
+                  {/* DICOM Series Selector Dropdown */}
+                  <div className="flex items-center gap-1.5 flex-1 min-w-[200px]">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Series:</span>
+                    <select
+                      value={activeSeriesIndex}
+                      onChange={(e) => {
+                        const idx = Number(e.target.value);
+                        setActiveSeriesIndex(idx);
+                        setCurrentSliceNumber(1);
+                      }}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-cyan-300 font-bold outline-none focus:border-cyan-500"
+                    >
+                      {activeSeriesList.map((ser, idx) => (
+                        <option key={ser.series_id || idx} value={idx}>
+                          Series {idx + 1}: {ser.series_description || "DICOM SERIES"} ({ser.total_slices || 24} Slices)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Slice Stepper & Scrub Slider */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => setCurrentSliceNumber(prev => Math.max(1, prev - 1))}
+                      className="px-2 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-300 hover:text-white cursor-pointer"
+                      title="Previous Slice"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    
+                    <span className="text-xs font-mono font-extrabold text-cyan-400 min-w-[70px] text-center">
+                      Slice {currentSliceNumber}/{currentSeries.total_slices || 24}
+                    </span>
+
+                    <button
+                      onClick={() => setCurrentSliceNumber(prev => Math.min(currentSeries.total_slices || 24, prev + 1))}
+                      className="px-2 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-300 hover:text-white cursor-pointer"
+                      title="Next Slice"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+
+                    <input
+                      type="range"
+                      min={1}
+                      max={currentSeries.total_slices || 24}
+                      value={currentSliceNumber}
+                      onChange={(e) => setCurrentSliceNumber(Number(e.target.value))}
+                      className="w-24 accent-cyan-500 cursor-pointer"
+                    />
+                  </div>
+
                 </div>
 
-                {/* 1-CLICK AUTO-CAPTURE KEY IMAGE BUTTON */}
-                <button
-                  onClick={execute1ClickAutoCapture}
-                  className="w-full py-3 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-extrabold text-sm rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-cyan-600/30 transition-all cursor-pointer"
-                >
-                  <Camera size={18} />
-                  <span>1-CLICK AUTO-CAPTURE KEY IMAGE (Press 'K')</span>
-                </button>
+                {/* Active Image Thumbnail Preview & Capture Action Button */}
+                <div className="flex items-center gap-3">
+                  {/* Thumbnail Preview Box */}
+                  <div className="w-12 h-12 bg-black border border-slate-800 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
+                    <img
+                      src={
+                        currentSeries.instances && currentSeries.instances[currentSliceNumber - 1]?.preview_url
+                          ? currentSeries.instances[currentSliceNumber - 1].preview_url
+                          : `/api/v3/pacs/instance-preview/inst_${currentSeries.series_id}_${currentSliceNumber}?frame=${currentSliceNumber}`
+                      }
+                      alt=""
+                      className="h-full object-contain"
+                    />
+                  </div>
+
+                  {/* 1-CLICK AUTO-CAPTURE BUTTON */}
+                  <button
+                    onClick={execute1ClickAutoCapture}
+                    className="flex-1 py-2.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 transition-all cursor-pointer"
+                  >
+                    <Camera size={16} />
+                    <span>1-CLICK AUTO-CAPTURE KEY IMAGE (Press 'K')</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
