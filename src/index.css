@@ -6,86 +6,86 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   🎨 3-MODEL CLINICAL DESIGN SYSTEM PALETTE ENGINE (IPACX MASTER SPEC)
+   🎨 SMOOTH, FRIENDLY, EYE-SOOTHING CLINICAL THEME SYSTEM (IPACX V3)
    ========================================================================== */
 
 :root {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color-scheme: dark light;
 
-  /* Default Model 2: Deep-Blue Medical Device Shell */
-  --app-bg: #0D1B2A;
-  --app-text: #E0E6ED;
-  --app-text-muted: #778DA9;
-  --panel-bg: #1B263B;
-  --panel-bg-subtle: rgba(27, 38, 59, 0.75);
-  --panel-interactive-bg: #223249;
-  --panel-border: #415A77;
-  --panel-border-subtle: rgba(65, 90, 119, 0.4);
-  --accent-primary: #778DA9;
-  --accent-mint: #4FE3B5;
-  --accent-glow: rgba(119, 141, 169, 0.3);
-  --pill-bg: #415A77;
-  --stat-red: #FF3B30;
-  --header-bg: rgba(13, 27, 42, 0.95);
-  --card-shadow: 0 8px 32px 0 rgba(13, 27, 42, 0.7);
+  /* Default Theme: Executive Dark Slate (Smooth, Friendly, Low Fatigue) */
+  --app-bg: #0B132B;
+  --app-text: #F8FAFC;
+  --app-text-muted: #94A3B8;
+  --panel-bg: #162238;
+  --panel-bg-subtle: rgba(22, 34, 56, 0.85);
+  --panel-interactive-bg: #1E2D4A;
+  --panel-border: #2D3E5E;
+  --panel-border-subtle: rgba(45, 62, 94, 0.6);
+  --accent-primary: #38BDF8;
+  --accent-mint: #34D399;
+  --accent-glow: rgba(56, 189, 248, 0.25);
+  --pill-bg: #223454;
+  --stat-red: #F87171;
+  --header-bg: rgba(11, 19, 43, 0.95);
+  --card-shadow: 0 12px 36px 0 rgba(7, 12, 22, 0.6);
 }
 
-/* 🌟 MODEL 1: Skins Factory Pitch-Black Radiology (Reading Room) */
+/* 🌟 MODEL 1: Midnight Velvet (Smooth Dark Reading Room) */
 html.model-pitch-black, body.model-pitch-black {
-  --app-bg: #000000;
-  --app-text: #E0E6ED;
-  --app-text-muted: #9CA3AF;
-  --panel-bg: #121212;
-  --panel-bg-subtle: rgba(18, 18, 18, 0.85);
-  --panel-interactive-bg: #1C1C1E;
-  --panel-border: #2A2A2D;
-  --panel-border-subtle: rgba(255, 255, 255, 0.1);
-  --accent-primary: #4FE3B5;
-  --accent-mint: #4FE3B5;
-  --accent-glow: rgba(79, 227, 181, 0.3);
-  --pill-bg: #2A2A2D;
-  --stat-red: #FF3B30;
-  --header-bg: rgba(0, 0, 0, 0.95);
-  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.9);
+  --app-bg: #070C16;
+  --app-text: #F1F5F9;
+  --app-text-muted: #94A3B8;
+  --panel-bg: #0F172A;
+  --panel-bg-subtle: rgba(15, 23, 42, 0.88);
+  --panel-interactive-bg: #1E293B;
+  --panel-border: #334155;
+  --panel-border-subtle: rgba(51, 65, 85, 0.6);
+  --accent-primary: #2DD4BF;
+  --accent-mint: #2DD4BF;
+  --accent-glow: rgba(45, 212, 191, 0.25);
+  --pill-bg: #1E293B;
+  --stat-red: #F87171;
+  --header-bg: rgba(7, 12, 22, 0.95);
+  --card-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.8);
 }
 
-/* 🌟 MODEL 2: Deep-Blue Medical Device Shell (Clinical Workspace) */
+/* 🌟 MODEL 2: Executive Dark Slate (Default - Ultra Smooth & Friendly) */
 html.model-deep-blue, body.model-deep-blue {
-  --app-bg: #0D1B2A;
-  --app-text: #E0E6ED;
-  --app-text-muted: #778DA9;
-  --panel-bg: #1B263B;
-  --panel-bg-subtle: rgba(27, 38, 59, 0.75);
-  --panel-interactive-bg: #223249;
-  --panel-border: #415A77;
-  --panel-border-subtle: rgba(65, 90, 119, 0.4);
-  --accent-primary: #778DA9;
-  --accent-mint: #4FE3B5;
-  --accent-glow: rgba(119, 141, 169, 0.3);
-  --pill-bg: #415A77;
-  --stat-red: #FF3B30;
-  --header-bg: rgba(13, 27, 42, 0.95);
-  --card-shadow: 0 8px 32px 0 rgba(13, 27, 42, 0.7);
+  --app-bg: #0B132B;
+  --app-text: #F8FAFC;
+  --app-text-muted: #94A3B8;
+  --panel-bg: #162238;
+  --panel-bg-subtle: rgba(22, 34, 56, 0.85);
+  --panel-interactive-bg: #1E2D4A;
+  --panel-border: #2D3E5E;
+  --panel-border-subtle: rgba(45, 62, 94, 0.6);
+  --accent-primary: #38BDF8;
+  --accent-mint: #34D399;
+  --accent-glow: rgba(56, 189, 248, 0.25);
+  --pill-bg: #223454;
+  --stat-red: #F87171;
+  --header-bg: rgba(11, 19, 43, 0.95);
+  --card-shadow: 0 12px 36px 0 rgba(7, 12, 22, 0.6);
 }
 
-/* 🌟 MODEL 3: Light Mode / Hybrid Interface (Administrative & Portals) */
+/* 🌟 MODEL 3: Clinical Light Harmony (Warm Off-White & Soft Blue) */
 html.model-clinical-light, body.model-clinical-light {
-  --app-bg: #F8F9FA;
+  --app-bg: #F8FAFC;
   --app-text: #0F172A;
   --app-text-muted: #475569;
   --panel-bg: #FFFFFF;
   --panel-bg-subtle: rgba(255, 255, 255, 0.95);
   --panel-interactive-bg: #F1F5F9;
-  --panel-border: #CBD5E1;
-  --panel-border-subtle: #E2E8F0;
-  --accent-primary: #005A9C;
-  --accent-mint: #005A9C;
-  --accent-glow: rgba(0, 90, 156, 0.15);
-  --pill-bg: #E2F0FD;
+  --panel-border: #E2E8F0;
+  --panel-border-subtle: #CBD5E1;
+  --accent-primary: #0284C7;
+  --accent-mint: #059669;
+  --accent-glow: rgba(2, 132, 199, 0.15);
+  --pill-bg: #E0F2FE;
   --stat-red: #DC2626;
   --header-bg: rgba(255, 255, 255, 0.95);
-  --card-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.15);
+  --card-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
 }
 
 body {
@@ -106,6 +106,7 @@ body {
   border: 1px solid var(--panel-border-subtle);
   box-shadow: var(--card-shadow);
   transition: background-color 0.3s ease, border-color 0.3s ease;
+  border-radius: 1rem;
 }
 
 .glass-panel-interactive {
@@ -114,6 +115,7 @@ body {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border-subtle);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 1rem;
 }
 
 .glass-panel-interactive:hover {
@@ -123,7 +125,7 @@ body {
 }
 
 /* ==========================================================================
-   🌐 DYNAMIC TAILWIND OVERRIDES FOR IMPRESSIVE 3-MODEL SHIFTS
+   🌐 DYNAMIC TAILWIND OVERRIDES FOR SMOOTH THEME SHIFTS
    ========================================================================== */
 
 /* 1. Canvas Outer Bezel & Page Wrappers */
@@ -132,7 +134,9 @@ html.model-deep-blue .bg-slate-950,
 html.model-clinical-light .bg-slate-950,
 html.model-pitch-black .bg-\[\#030712\],
 html.model-deep-blue .bg-\[\#030712\],
-html.model-clinical-light .bg-\[\#030712\] {
+html.model-clinical-light .bg-\[\#030712\],
+html.model-pitch-black .bg-black,
+html.model-deep-blue .bg-black {
   background-color: var(--app-bg) !important;
 }
 
@@ -174,7 +178,13 @@ html.model-clinical-light .border-slate-800\/50 {
   border-color: var(--panel-border) !important;
 }
 
-/* 4. Text Color Adaptations */
+/* 4. Inputs & Inset Containers */
+html.model-pitch-black .bg-slate-950,
+html.model-deep-blue .bg-slate-950 {
+  background-color: var(--panel-interactive-bg) !important;
+}
+
+/* 5. Text Color Adaptations */
 html.model-clinical-light .text-white,
 html.model-clinical-light .text-slate-100,
 html.model-clinical-light .text-slate-200 {
@@ -191,7 +201,7 @@ html.model-deep-blue .text-slate-400 {
   color: var(--app-text-muted) !important;
 }
 
-/* 5. Navigation Bar Header */
+/* 6. Navigation Bar Header */
 html.model-pitch-black nav,
 html.model-deep-blue nav,
 html.model-clinical-light nav {
@@ -199,25 +209,25 @@ html.model-clinical-light nav {
   border-color: var(--panel-border) !important;
 }
 
-/* 6. Pitch-Black Mint Accents (#4FE3B5) */
+/* 7. Pitch-Black Mint Accents (#2DD4BF) */
 html.model-pitch-black .text-cyan-400 {
-  color: #4FE3B5 !important;
+  color: #2DD4BF !important;
 }
 html.model-pitch-black .border-cyan-500\/30,
 html.model-pitch-black .border-cyan-500\/40 {
-  border-color: rgba(79, 227, 181, 0.4) !important;
+  border-color: rgba(45, 212, 191, 0.4) !important;
 }
 html.model-pitch-black .bg-cyan-500\/20,
 html.model-pitch-black .bg-cyan-500\/10 {
-  background-color: rgba(79, 227, 181, 0.15) !important;
+  background-color: rgba(45, 212, 191, 0.15) !important;
 }
 
-/* 7. Clinical Light Hybrid Blue Accents (#005A9C) */
+/* 8. Clinical Light Hybrid Blue Accents (#0284C7) */
 html.model-clinical-light .text-cyan-400 {
-  color: #005A9C !important;
+  color: #0284C7 !important;
 }
 html.model-clinical-light .bg-cyan-600 {
-  background-color: #005A9C !important;
+  background-color: #0284C7 !important;
 }
 html.model-clinical-light .border-slate-700 {
   border-color: #CBD5E1 !important;
@@ -247,23 +257,6 @@ h1, h2, h3, h4, .font-heading {
   background: var(--accent-primary);
 }
 
-/* Glowing Border Effects */
-.glow-cyan {
-  box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.4);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.4);
-}
-
-.glow-purple {
-  box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.4);
-}
-
-.glow-red {
-  box-shadow: 0 0 25px -5px rgba(255, 59, 48, 0.5);
-}
-
 /* Keyframe Animations */
 @keyframes pulse-slow {
   0%, 100% { opacity: 1; transform: scale(1); }
@@ -272,13 +265,4 @@ h1, h2, h3, h4, .font-heading {
 
 .animate-pulse-slow {
   animation: pulse-slow 3s infinite ease-in-out;
-}
-
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(1000%); }
-}
-
-.animate-scanline {
-  animation: scanline 8s linear infinite;
 }
