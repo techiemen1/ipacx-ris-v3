@@ -46,6 +46,7 @@ const DoctorDashboardV3 = () => {
   const [viewMode, setViewMode] = useState(typeof window !== "undefined" && window.innerWidth < 768 ? "CARDS" : "TABLE"); // "TABLE" | "CARDS"
   const [selectedStudy, setSelectedStudy] = useState(null);
   const [showWorkstation, setShowWorkstation] = useState(false);
+  const [workstationMode, setWorkstationMode] = useState("SPLIT");
   const [showReportingStudio, setShowReportingStudio] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -332,15 +333,25 @@ const DoctorDashboardV3 = () => {
             </select>
           </div>
 
-          <div className="relative flex-1 md:w-56">
+          {/* High-Visibility Command Search Input */}
+          <div className="relative flex-1 min-w-[220px]">
             <input
               type="text"
-              placeholder="Search Patient, MRN, Exam..."
+              placeholder="Search Patient Name, MRN, Accession #, Exam..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-1.5 pl-9 text-xs text-white outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-slate-950 border border-cyan-500/40 focus:border-cyan-400 rounded-xl px-3.5 py-2 pl-9 pr-8 text-xs text-white outline-none ring-1 ring-cyan-500/20 focus:ring-cyan-500/50 transition-all font-medium shadow-inner"
             />
-            <Search size={14} className="absolute left-3 top-2.5 text-slate-500" />
+            <Search size={15} className="absolute left-3 top-2.5 text-cyan-400" />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-white text-xs font-bold"
+                title="Clear Search"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
@@ -449,8 +460,8 @@ const DoctorDashboardV3 = () => {
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                       <button
-                        onClick={() => { setSelectedStudy(study); setShowWorkstation(true); }}
-                        className="px-2.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-extrabold inline-flex items-center gap-1 shadow-md shadow-cyan-600/30 transition-all cursor-pointer shrink-0"
+                        onClick={() => { setSelectedStudy(study); setWorkstationMode("SPLIT"); setShowWorkstation(true); }}
+                        className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1 shadow-sm transition-all cursor-pointer shrink-0 touch-manipulation active:scale-95"
                         title="Open 50:50 Multilayered DICOM Viewer & Reporting Studio"
                       >
                         <Split size={13} /> 50:50 Studio
@@ -559,8 +570,8 @@ const DoctorDashboardV3 = () => {
                 {/* Action Buttons Grid */}
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
                   <button
-                    onClick={() => { setSelectedStudy(study); setShowWorkstation(true); }}
-                    className="px-2 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-1 shadow-md shadow-cyan-600/30 cursor-pointer"
+                    onClick={() => { setSelectedStudy(study); setWorkstationMode("SPLIT"); setShowWorkstation(true); }}
+                    className="px-2 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-sm cursor-pointer touch-manipulation active:scale-95"
                   >
                     <Split size={13} /> 50:50 Studio
                   </button>
@@ -600,6 +611,7 @@ const DoctorDashboardV3 = () => {
       {showWorkstation && selectedStudy && (
         <DiagnosticWorkstationV3
           study={selectedStudy}
+          initialMode={workstationMode}
           onClose={() => setShowWorkstation(false)}
         />
       )}

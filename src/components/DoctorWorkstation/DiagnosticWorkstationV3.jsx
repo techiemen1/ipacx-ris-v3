@@ -28,6 +28,7 @@ import {
   FileText
 } from "lucide-react";
 import api from "../../api/axios";
+import MobileMPRViewer from "../DICOMViewer/MobileMPRViewer";
 
 const GYNECOLOGY_MACROS = [
   {
@@ -95,8 +96,8 @@ Single live intrauterine fetus.
   }
 ];
 
-const DiagnosticWorkstationV3 = ({ study, onClose }) => {
-  const [layoutMode, setLayoutMode] = useState("SPLIT"); // "SPLIT" (50:50) | "VIEWER" (100%) | "REPORT" (100%)
+const DiagnosticWorkstationV3 = ({ study, onClose, initialMode = "SPLIT" }) => {
+  const [layoutMode, setLayoutMode] = useState(initialMode); // "SPLIT" (50:50) | "MPR_3D" | "VIEWER" (100%) | "REPORT" (100%)
 
   const [activeSeriesList, setActiveSeriesList] = useState([
     { series_id: "ser_1", series_description: "OBSTETRIC 2D & COLOR DOPPLER", modality: "US", total_slices: 32, instances: [] },
@@ -273,9 +274,31 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
     const seriesDesc = currentSeries.series_description || "DICOM SERIES";
     const fullCaption = `${seriesDesc} | ${sliceTag}`;
 
+    const generateDicomOverlaySvg = (seriesDesc, sliceNum, totalSlices) => {
+      const pName = study?.patient_name || "PATIENT";
+      const pMrn = study?.patient_mrn || "MRN-1001";
+      const pMod = currentSeries.modality || study?.modality || "CT";
+      const dateStr = new Date().toISOString().split("T")[0];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+        <rect width="400" height="300" fill="#070c14"/>
+        <circle cx="200" cy="150" r="110" fill="#141f30" stroke="#25354e" stroke-width="2"/>
+        <ellipse cx="200" cy="150" rx="75" ry="50" fill="#203046" stroke="#364e70" stroke-width="1.5"/>
+        <ellipse cx="200" cy="150" rx="35" ry="25" fill="#324968" opacity="0.8"/>
+        <line x1="200" y1="20" x2="200" y2="280" stroke="#3b82f6" stroke-dasharray="4,4" opacity="0.5"/>
+        <line x1="20" y1="150" x2="380" y2="150" stroke="#3b82f6" stroke-dasharray="4,4" opacity="0.5"/>
+        <text x="12" y="22" fill="#60a5fa" font-family="monospace" font-size="11" font-weight="bold">${pName}</text>
+        <text x="12" y="38" fill="#94a3b8" font-family="monospace" font-size="10">${pMrn} | ${pMod}</text>
+        <text x="388" y="22" fill="#60a5fa" font-family="monospace" font-size="11" font-weight="bold" text-anchor="end">${seriesDesc}</text>
+        <text x="388" y="38" fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="end">Slice ${sliceNum}/${totalSlices}</text>
+        <text x="12" y="285" fill="#cbd5e1" font-family="monospace" font-size="10">WW: 350 WL: 40</text>
+        <text x="388" y="285" fill="#cbd5e1" font-family="monospace" font-size="10" text-anchor="end">${dateStr}</text>
+      </svg>`;
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    };
+
     const activeInstance = currentSeries.instances && currentSeries.instances[currentSliceNumber - 1];
     const liveCanvasDataUrl = captureCanvasFromOhif();
-    const finalDataUrl = liveCanvasDataUrl || activeInstance?.preview_url || `/api/v3/pacs/instance-preview/inst_${currentSeries.series_id}_${currentSliceNumber}?studyUID=${encodeURIComponent(study?.study_uid || study?.id || '')}&seriesUID=${encodeURIComponent(currentSeries.series_id)}&frame=${currentSliceNumber}`;
+    const finalDataUrl = liveCanvasDataUrl || (activeInstance?.preview_url && activeInstance.preview_url.startsWith("data:")) ? activeInstance.preview_url : generateDicomOverlaySvg(seriesDesc, currentSliceNumber, totalSlices);
 
     const uniqueId = `ki_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const currentModality = currentSeries.modality || study?.modality || "MR";
@@ -380,19 +403,27 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
             </div>
           </div>
 
-          {/* 📐 50:50 LAYOUT MODE SWITCHER */}
-          <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          {/* 📐 LAYOUT MODE SWITCHER */}
+          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
             <button
               onClick={() => setLayoutMode("SPLIT")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 layoutMode === "SPLIT" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "text-slate-400 hover:text-white"
               }`}
             >
               <Split size={14} /> 50:50 Screen View
             </button>
             <button
+              onClick={() => setLayoutMode("MPR_3D")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                layoutMode === "MPR_3D" ? "bg-purple-600 text-white shadow-md shadow-purple-600/30" : "text-purple-300 hover:text-white"
+              }`}
+            >
+              <Layers size={14} /> 3D MPR Viewport
+            </button>
+            <button
               onClick={() => setLayoutMode("VIEWER")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 layoutMode === "VIEWER" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "text-slate-400 hover:text-white"
               }`}
             >
@@ -400,7 +431,7 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
             </button>
             <button
               onClick={() => setLayoutMode("REPORT")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 layoutMode === "REPORT" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "text-slate-400 hover:text-white"
               }`}
             >
@@ -413,14 +444,21 @@ const DiagnosticWorkstationV3 = ({ study, onClose }) => {
             <span className="hidden md:flex items-center gap-1.5 text-[11px] font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-3 py-1 rounded-full">
               <Zap size={13} /> Press <kbd className="font-extrabold text-white bg-slate-800 px-1.5 py-0.5 rounded">K</kbd> to capture Key Image
             </span>
-            <button onClick={onClose} className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors">
+            <button onClick={onClose} className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer">
               <X size={18} />
             </button>
           </div>
         </header>
 
-        {/* 🌟 50:50 DUAL-PANE BODY */}
+        {/* 🌟 WORKSTATION MAIN BODY */}
         <div className="flex-1 flex overflow-hidden">
+          
+          {/* 🧊 3D MPR ORTHOGONAL RECONSTRUCTION MODE */}
+          {layoutMode === "MPR_3D" && (
+            <div className="w-full h-full bg-black">
+              <MobileMPRViewer studyInstanceUID={study?.study_uid || study?.id} />
+            </div>
+          )}
           
           {/* 🖼️ LEFT PANE: 50% OHIF DICOM VIEWER */}
           {(layoutMode === "SPLIT" || layoutMode === "VIEWER") && (
