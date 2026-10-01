@@ -6,100 +6,123 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   🎨 SOOTHING, FRIENDLY, PAIN-FREE CLINICAL THEME SYSTEM (IPACX V3)
-   1. Warm Beige & Soft Grey (Default): Warm linen canvas, charcoal text
-   2. Soft Sage & Mint Green: Bio-restorative light sage canvas, deep forest text
-   3. Soft Sky & Clinical Blue: Soothing ice-blue canvas, deep navy text
+   🎨 MASTER ENTERPRISE MEDICAL THEME SYSTEM (IPACX V3)
+   1. Deep Sapphire (Default): Executive Midnight Blue Glassmorphism
+   2. Emerald Sage: Bio-Clinical Forest Mint Glassmorphism
+   3. Velvet Obsidian: Luxury Charcoal & Amber Gold
+   4. Warm Beige: Soothing Linen Eye-Relief Light Mode
    ========================================================================== */
 
 :root {
   --app-font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   --heading-font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-  color-scheme: light;
+  color-scheme: dark;
 
-  /* Default Theme: Warm Beige & Soft Grey */
-  --app-bg: #F5F2EB;
-  --app-text: #2D3338;
-  --app-text-muted: #6C757D;
-  --panel-bg: #FFFFFF;
-  --panel-bg-subtle: rgba(255, 255, 255, 0.96);
-  --panel-interactive-bg: #FAF7F2;
-  --panel-border: #E2DDD4;
-  --panel-border-subtle: #EDE8E0;
-  --accent-primary: #D97706;
-  --accent-mint: #059669;
-  --accent-glow: rgba(217, 119, 6, 0.18);
-  --pill-bg: #FEF3C7;
-  --pill-text: #92400E;
-  --stat-red: #DC2626;
-  --header-bg: rgba(245, 242, 235, 0.96);
-  --card-shadow: 0 10px 28px -4px rgba(100, 90, 80, 0.07);
+  /* Default Theme: Deep Sapphire Midnight Glass */
+  --app-bg: #0B132B;
+  --app-text: #F8FAFC;
+  --app-text-muted: #94A3B8;
+  --panel-bg: #14223A;
+  --panel-bg-subtle: rgba(20, 34, 58, 0.88);
+  --panel-interactive-bg: #1B2B47;
+  --panel-border: #25385A;
+  --panel-border-subtle: rgba(37, 56, 90, 0.6);
+  --accent-primary: #38BDF8;
+  --accent-mint: #22D3EE;
+  --accent-glow: rgba(56, 189, 248, 0.25);
+  --pill-bg: #1E3A5F;
+  --pill-text: #38BDF8;
+  --stat-red: #F87171;
+  --header-bg: rgba(11, 19, 43, 0.95);
+  --card-shadow: 0 14px 40px rgba(7, 12, 22, 0.6);
 }
 
-/* 🌟 THEME 1: Warm Beige & Soft Grey (Warm Linen Canvas - Eye Relief) */
+/* 💎 THEME 1: Deep Sapphire (Executive Midnight Blue Glass - Default) */
+html.model-deep-sapphire, body.model-deep-sapphire {
+  --app-font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --heading-font-family: 'Outfit', sans-serif;
+  --app-bg: #0B132B;
+  --app-text: #F8FAFC;
+  --app-text-muted: #94A3B8;
+  --panel-bg: #14223A;
+  --panel-bg-subtle: rgba(20, 34, 58, 0.88);
+  --panel-interactive-bg: #1B2B47;
+  --panel-border: #25385A;
+  --panel-border-subtle: rgba(37, 56, 90, 0.6);
+  --accent-primary: #38BDF8;
+  --accent-mint: #22D3EE;
+  --accent-glow: rgba(56, 189, 248, 0.25);
+  --pill-bg: #1E3A5F;
+  --pill-text: #38BDF8;
+  --stat-red: #F87171;
+  --header-bg: rgba(11, 19, 43, 0.95);
+  --card-shadow: 0 14px 40px rgba(7, 12, 22, 0.6);
+}
+
+/* 🌿 THEME 2: Emerald Sage (Bio-Clinical Forest Mint Glass) */
+html.model-emerald-sage, body.model-emerald-sage {
+  --app-font-family: 'Manrope', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --heading-font-family: 'Outfit', sans-serif;
+  --app-bg: #071913;
+  --app-text: #F0FDF4;
+  --app-text-muted: #94A3B8;
+  --panel-bg: #0E2920;
+  --panel-bg-subtle: rgba(14, 41, 32, 0.88);
+  --panel-interactive-bg: #133328;
+  --panel-border: #1A4033;
+  --panel-border-subtle: rgba(26, 64, 51, 0.6);
+  --accent-primary: #2DD4BF;
+  --accent-mint: #10B981;
+  --accent-glow: rgba(45, 212, 191, 0.25);
+  --pill-bg: #14382C;
+  --pill-text: #2DD4BF;
+  --stat-red: #F87171;
+  --header-bg: rgba(7, 25, 19, 0.95);
+  --card-shadow: 0 14px 40px rgba(3, 15, 10, 0.7);
+}
+
+/* 👑 THEME 3: Velvet Obsidian (Luxury Charcoal & Amber Gold) */
+html.model-velvet-obsidian, body.model-velvet-obsidian {
+  --app-font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --heading-font-family: 'Outfit', sans-serif;
+  --app-bg: #0F1117;
+  --app-text: #FAFAFA;
+  --app-text-muted: #A1A1AA;
+  --panel-bg: #181B24;
+  --panel-bg-subtle: rgba(24, 27, 36, 0.88);
+  --panel-interactive-bg: #202430;
+  --panel-border: #282D3C;
+  --panel-border-subtle: rgba(40, 45, 60, 0.6);
+  --accent-primary: #F59E0B;
+  --accent-mint: #F97316;
+  --accent-glow: rgba(245, 158, 11, 0.25);
+  --pill-bg: #2E2718;
+  --pill-text: #F59E0B;
+  --stat-red: #F87171;
+  --header-bg: rgba(15, 17, 23, 0.95);
+  --card-shadow: 0 14px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* ☀️ THEME 4: Warm Beige (Soothing Linen Eye-Relief Light Mode) */
 html.model-warm-beige, body.model-warm-beige {
   --app-font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
-  --heading-font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-  --app-bg: #F5F2EB;
-  --app-text: #2D3338;
-  --app-text-muted: #6C757D;
+  --heading-font-family: 'Outfit', sans-serif;
+  --app-bg: #F6F4F0;
+  --app-text: #1E293B;
+  --app-text-muted: #64748B;
   --panel-bg: #FFFFFF;
-  --panel-bg-subtle: rgba(255, 255, 255, 0.96);
-  --panel-interactive-bg: #FAF7F2;
+  --panel-bg-subtle: rgba(255, 255, 255, 0.95);
+  --panel-interactive-bg: #FAF8F4;
   --panel-border: #E2DDD4;
   --panel-border-subtle: #EDE8E0;
   --accent-primary: #D97706;
-  --accent-mint: #059669;
+  --accent-mint: #0284C7;
   --accent-glow: rgba(217, 119, 6, 0.18);
   --pill-bg: #FEF3C7;
   --pill-text: #92400E;
   --stat-red: #DC2626;
-  --header-bg: rgba(245, 242, 235, 0.96);
-  --card-shadow: 0 10px 28px -4px rgba(100, 90, 80, 0.07);
-}
-
-/* 🌟 THEME 2: Soft Sage & Restorative Green (Light Sage & Mint Canvas) */
-html.model-light-green, body.model-light-green {
-  --app-font-family: 'Manrope', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --heading-font-family: 'Outfit', 'Manrope', sans-serif;
-  --app-bg: #EAF2ED;
-  --app-text: #142F24;
-  --app-text-muted: #4B6B5D;
-  --panel-bg: #FFFFFF;
-  --panel-bg-subtle: rgba(255, 255, 255, 0.96);
-  --panel-interactive-bg: #F0F6F2;
-  --panel-border: #D1E0D7;
-  --panel-border-subtle: #E1ECE5;
-  --accent-primary: #059669;
-  --accent-mint: #0D9488;
-  --accent-glow: rgba(5, 150, 105, 0.18);
-  --pill-bg: #D1FAE5;
-  --pill-text: #065F46;
-  --stat-red: #DC2626;
-  --header-bg: rgba(234, 242, 237, 0.96);
-  --card-shadow: 0 10px 28px -4px rgba(20, 70, 45, 0.07);
-}
-
-/* 🌟 THEME 3: Soft Sky & Clinical Blue (Breeze Ice Blue Canvas) */
-html.model-light-blue, body.model-light-blue {
-  --app-font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
-  --heading-font-family: 'Outfit', 'Inter', sans-serif;
-  --app-bg: #EDF4FB;
-  --app-text: #0F172A;
-  --app-text-muted: #475569;
-  --panel-bg: #FFFFFF;
-  --panel-bg-subtle: rgba(255, 255, 255, 0.96);
-  --panel-interactive-bg: #F2F7FD;
-  --panel-border: #D1DFEE;
-  --panel-border-subtle: #E0EBF6;
-  --accent-primary: #0284C7;
-  --accent-mint: #0284C7;
-  --accent-glow: rgba(2, 132, 199, 0.18);
-  --pill-bg: #E0F2FE;
-  --pill-text: #075985;
-  --stat-red: #DC2626;
-  --header-bg: rgba(237, 244, 251, 0.96);
-  --card-shadow: 0 10px 28px -4px rgba(30, 60, 100, 0.08);
+  --header-bg: rgba(246, 244, 240, 0.96);
+  --card-shadow: 0 10px 30px -4px rgba(100, 90, 80, 0.08);
 }
 
 body {
@@ -148,10 +171,10 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 }
 
 /* ==========================================================================
-   🌐 DYNAMIC TAILWIND OVERRIDES FOR ALL SOOTHING THEMES
+   🌐 TAILWIND ADAPTIVE OVERRIDES FOR ALL 4 THEMES
    ========================================================================== */
 
-/* 1. Canvas Outer Bezel & Page Wrappers */
+/* Outer Page Backgrounds */
 .bg-slate-950,
 .bg-black,
 [class*="bg-[#030712]"],
@@ -159,7 +182,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   background-color: var(--app-bg) !important;
 }
 
-/* 2. Inner Workspace Panels & Cards */
+/* Inner Panels & Cards */
 .bg-slate-900,
 .bg-slate-900\/60,
 .bg-slate-900\/50,
@@ -171,7 +194,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   background-color: var(--panel-bg) !important;
 }
 
-/* 3. Panel & Table Borders */
+/* Borders */
 .border-slate-800,
 .border-slate-800\/80,
 .border-slate-800\/60,
@@ -181,8 +204,8 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   border-color: var(--panel-border) !important;
 }
 
-/* 4. Inputs, Selects & Textareas */
-input, select, textarea, .bg-slate-950 {
+/* Form Inputs, Selects & Textareas */
+input, select, textarea {
   background-color: var(--panel-interactive-bg) !important;
   color: var(--app-text) !important;
   border-color: var(--panel-border) !important;
@@ -193,55 +216,29 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px var(--accent-glow) !important;
 }
 
-/* 5. Text Color Adaptations */
-.text-white,
-.text-slate-100,
-.text-slate-200,
-.text-\[\#E0E6ED\] {
-  color: var(--app-text) !important;
-}
-
-.text-slate-400,
-.text-slate-300,
-.text-slate-500 {
-  color: var(--app-text-muted) !important;
-}
-
-/* 6. Navigation Bar Header */
+/* Navigation Bar Header */
 nav {
   background-color: var(--header-bg) !important;
   border-color: var(--panel-border) !important;
 }
 
-/* 7. Theme Accent Dynamic Adaptations */
+/* Dynamic Accent Adaptations for Emerald Sage & Velvet Obsidian */
+html.model-emerald-sage .text-cyan-400,
+html.model-emerald-sage .text-cyan-300 {
+  color: #2DD4BF !important;
+}
+
+html.model-velvet-obsidian .text-cyan-400,
+html.model-velvet-obsidian .text-cyan-300 {
+  color: #F59E0B !important;
+}
+
 html.model-warm-beige .text-cyan-400,
 html.model-warm-beige .text-cyan-300 {
   color: #D97706 !important;
 }
-html.model-warm-beige .bg-cyan-600,
-html.model-warm-beige .bg-cyan-500 {
-  background-color: #D97706 !important;
-}
 
-html.model-light-green .text-cyan-400,
-html.model-light-green .text-cyan-300 {
-  color: #059669 !important;
-}
-html.model-light-green .bg-cyan-600,
-html.model-light-green .bg-cyan-500 {
-  background-color: #059669 !important;
-}
-
-html.model-light-blue .text-cyan-400,
-html.model-light-blue .text-cyan-300 {
-  color: #0284C7 !important;
-}
-html.model-light-blue .bg-cyan-600,
-html.model-light-blue .bg-cyan-500 {
-  background-color: #0284C7 !important;
-}
-
-/* Custom High-Tech Scrollbars */
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

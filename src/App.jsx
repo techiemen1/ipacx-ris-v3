@@ -173,23 +173,37 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
 
         {/* Right Action Icons & Mobile Hamburger Toggle */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* 3-Model Palette Toggle */}
+          {/* 4-Theme Palette Toggle */}
           <button
             onClick={cycleDesignModel}
             title={`Active Theme: ${model}. Click to cycle.`}
             className={`min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer active:scale-95 ${
-              model === "WARM_BEIGE"
-                ? "bg-amber-100/80 text-amber-900 border-amber-300 hover:bg-amber-200"
-                : model === "LIGHT_GREEN"
-                ? "bg-emerald-100/80 text-emerald-900 border-emerald-300 hover:bg-emerald-200"
-                : "bg-sky-100/80 text-sky-900 border-sky-300 hover:bg-sky-200"
+              model === "DEEP_SAPPHIRE"
+                ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/30"
+                : model === "EMERALD_SAGE"
+                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30"
+                : model === "VELVET_OBSIDIAN"
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30"
+                : "bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200"
             }`}
           >
             <Palette size={15} className={
-              model === "WARM_BEIGE" ? "text-amber-700" : model === "LIGHT_GREEN" ? "text-emerald-700" : "text-sky-700"
+              model === "DEEP_SAPPHIRE"
+                ? "text-cyan-400"
+                : model === "EMERALD_SAGE"
+                ? "text-emerald-400"
+                : model === "VELVET_OBSIDIAN"
+                ? "text-amber-400"
+                : "text-amber-700"
             } />
             <span className="hidden sm:inline font-semibold">
-              {model === "WARM_BEIGE" ? "Warm Beige & Grey" : model === "LIGHT_GREEN" ? "Soft Sage & Green" : "Soft Sky & Blue"}
+              {model === "DEEP_SAPPHIRE"
+                ? "Deep Sapphire (Midnight)"
+                : model === "EMERALD_SAGE"
+                ? "Emerald Sage (Mint)"
+                : model === "VELVET_OBSIDIAN"
+                ? "Velvet Obsidian (Gold)"
+                : "Warm Beige (Linen)"}
             </span>
           </button>
 

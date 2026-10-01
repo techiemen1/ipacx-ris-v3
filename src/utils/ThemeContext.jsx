@@ -3,13 +3,14 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 const ThemeContext = createContext();
 
-const MODEL_MAP = {
-  PITCH_BLACK: "WARM_BEIGE",
-  DEEP_BLUE: "LIGHT_BLUE",
-  CLINICAL_LIGHT: "LIGHT_GREEN",
-  WARM_BEIGE: "WARM_BEIGE",
-  LIGHT_GREEN: "LIGHT_GREEN",
-  LIGHT_BLUE: "LIGHT_BLUE"
+export const MODEL_MAP = {
+  PITCH_BLACK: "DEEP_SAPPHIRE",
+  DEEP_BLUE: "DEEP_SAPPHIRE",
+  CLINICAL_LIGHT: "WARM_BEIGE",
+  DEEP_SAPPHIRE: "DEEP_SAPPHIRE",
+  EMERALD_SAGE: "EMERALD_SAGE",
+  VELVET_OBSIDIAN: "VELVET_OBSIDIAN",
+  WARM_BEIGE: "WARM_BEIGE"
 };
 
 export const ThemeProvider = ({ children }) => {
@@ -23,32 +24,34 @@ export const ThemeProvider = ({ children }) => {
         if (conf.designModel && MODEL_MAP[conf.designModel]) return MODEL_MAP[conf.designModel];
       }
     } catch (e) {}
-    return "WARM_BEIGE"; // Default to Warm Beige & Grey (Ultra Soothing & Eye-Friendly)
+    return "DEEP_SAPPHIRE"; // Default to Deep Sapphire Midnight Glass (Sleek, Premium, Zero Glare)
   });
 
   useEffect(() => {
-    const activeModel = MODEL_MAP[model] || "WARM_BEIGE";
+    const activeModel = MODEL_MAP[model] || "DEEP_SAPPHIRE";
     localStorage.setItem("ipacx_design_model", activeModel);
     const root = document.documentElement;
 
     root.classList.remove(
+      "model-deep-sapphire",
+      "model-emerald-sage",
+      "model-velvet-obsidian",
       "model-warm-beige",
-      "model-light-green",
-      "model-light-blue",
       "model-pitch-black",
       "model-deep-blue",
       "model-clinical-light",
-      "theme-dark"
+      "theme-dark",
+      "theme-light"
     );
 
-    root.classList.add("theme-light");
-
-    if (activeModel === "LIGHT_GREEN") {
-      root.classList.add("model-light-green");
-    } else if (activeModel === "LIGHT_BLUE") {
-      root.classList.add("model-light-blue");
+    if (activeModel === "WARM_BEIGE") {
+      root.classList.add("model-warm-beige", "theme-light");
+    } else if (activeModel === "EMERALD_SAGE") {
+      root.classList.add("model-emerald-sage", "theme-dark");
+    } else if (activeModel === "VELVET_OBSIDIAN") {
+      root.classList.add("model-velvet-obsidian", "theme-dark");
     } else {
-      root.classList.add("model-warm-beige");
+      root.classList.add("model-deep-sapphire", "theme-dark");
     }
   }, [model]);
 
@@ -58,15 +61,18 @@ export const ThemeProvider = ({ children }) => {
 
   const cycleDesignModel = () => {
     setModel(prev => {
-      const current = MODEL_MAP[prev] || "WARM_BEIGE";
-      if (current === "WARM_BEIGE") return "LIGHT_GREEN";
-      if (current === "LIGHT_GREEN") return "LIGHT_BLUE";
-      return "WARM_BEIGE";
+      const current = MODEL_MAP[prev] || "DEEP_SAPPHIRE";
+      if (current === "DEEP_SAPPHIRE") return "EMERALD_SAGE";
+      if (current === "EMERALD_SAGE") return "VELVET_OBSIDIAN";
+      if (current === "VELVET_OBSIDIAN") return "WARM_BEIGE";
+      return "DEEP_SAPPHIRE";
     });
   };
 
+  const isLight = (MODEL_MAP[model] || "DEEP_SAPPHIRE") === "WARM_BEIGE";
+
   return (
-    <ThemeContext.Provider value={{ model: MODEL_MAP[model] || "WARM_BEIGE", setDesignModel, cycleDesignModel, isLight: true }}>
+    <ThemeContext.Provider value={{ model: MODEL_MAP[model] || "DEEP_SAPPHIRE", setDesignModel, cycleDesignModel, isLight }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -75,7 +81,7 @@ export const ThemeProvider = ({ children }) => {
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
-    return { model: "WARM_BEIGE", theme: "WARM_BEIGE", setDesignModel: () => {}, cycleDesignModel: () => {}, toggleTheme: () => {}, isLight: true };
+    return { model: "DEEP_SAPPHIRE", theme: "DEEP_SAPPHIRE", setDesignModel: () => {}, cycleDesignModel: () => {}, toggleTheme: () => {}, isLight: false };
   }
   return {
     ...context,
@@ -85,5 +91,3 @@ export const useTheme = () => {
 };
 
 export default ThemeContext;
-
-
