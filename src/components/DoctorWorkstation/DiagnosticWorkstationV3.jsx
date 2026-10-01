@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import api from "../../api/axios";
 import MobileMPRViewer from "../DICOMViewer/MobileMPRViewer";
+import { getOhifViewerUrl } from "../../utils/viewerUrl";
 
 // 🌟 RADLEX STRUCTURED REPORT TEMPLATES
 const REPORT_TEMPLATES = [
@@ -367,7 +368,7 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
             3D MPR
           </button>
           <a
-            href={`http://${typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost"}:8043/ohif/viewer?StudyInstanceUIDs=${encodeURIComponent(study?.study_uid || study?.id || "")}`}
+            href={getOhifViewerUrl(study)}
             target="_blank"
             rel="noreferrer"
             className="px-2.5 py-1 rounded-lg font-extrabold transition-all bg-cyan-950 text-cyan-300 border border-cyan-800 hover:bg-cyan-900 text-xs flex items-center gap-1"

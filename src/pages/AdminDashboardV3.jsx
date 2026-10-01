@@ -34,16 +34,26 @@ const AdminDashboardV3 = () => {
   const [loading, setLoading] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState("");
 
-  const [hospitalConfig, setHospitalConfig] = useState({
-    hospitalName: "iPaCX RADIOLOGY & DIAGNOSTIC IMAGING CENTER",
-    tagline: "NABH Accredited • NHA ABDM M1/M2/M3 • AERB Radiation Safety Certified",
-    address: "Plot 104, Medical Center Avenue, Healthcare Hub, Maharashtra 400001",
-    phone: "+91 (022) 2891-0000 | report@ipacx-imaging.com",
-    gstin: "27AAAAA0000A1Z5",
-    sacCode: "999312",
-    ohifViewerUrl: "http://192.168.1.7:8042/ohif/viewer",
-    preferredViewer: "50:50", // 50:50 | OHIF | MOBILE_LITE
-    logoUrl: ""
+  const [hospitalConfig, setHospitalConfig] = useState(() => {
+    const saved = localStorage.getItem("ipacx_hospital_config");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return {
+      hospitalName: "iPaCX RADIOLOGY & DIAGNOSTIC IMAGING CENTER",
+      tagline: "NABH Accredited • NHA ABDM M1/M2/M3 • AERB Radiation Safety Certified",
+      address: "Plot 104, Medical Center Avenue, Healthcare Hub, Maharashtra 400001",
+      phone: "+91 (022) 2891-0000 | report@ipacx-imaging.com",
+      gstin: "27AAAAA0000A1Z5",
+      sacCode: "999312",
+      ohifViewerUrl: "http://localhost:8042/ohif/viewer?StudyInstanceUIDs={studyUID}",
+      weasisUrl: "weasis://$dicom:get -w http://localhost:8042/wado?requestType=WADO&studyUID={studyUID}",
+      horosUrl: "osirix://?methodName=DownloadURL&URL={wadoUrl}",
+      preferredViewer: "50:50",
+      logoUrl: ""
+    };
   });
 
   useEffect(() => {
@@ -55,8 +65,11 @@ const AdminDashboardV3 = () => {
     try {
       const res = await api.get("/api/v3/config/hospital").catch(() => null);
       if (res?.data?.success && res?.data?.config) {
-        setHospitalConfig(res.data.config);
-        localStorage.setItem("ipacx_hospital_config", JSON.stringify(res.data.config));
+        setHospitalConfig(prev => {
+          const merged = { ...prev, ...res.data.config };
+          localStorage.setItem("ipacx_hospital_config", JSON.stringify(merged));
+          return merged;
+        });
       }
     } catch (e) {
       console.warn("Config fetch error:", e);
@@ -64,11 +77,12 @@ const AdminDashboardV3 = () => {
   };
 
   const handleSaveHospitalConfig = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     try {
-      await api.post("/api/v3/config/hospital", hospitalConfig).catch(() => null);
       localStorage.setItem("ipacx_hospital_config", JSON.stringify(hospitalConfig));
-      setSavedSuccess("✅ Hospital Branding updated! Changes reflected across Login Page, Workstation & Reports!");
+      await api.post("/api/v3/config/hospital", hospitalConfig).catch(() => null);
+      window.dispatchEvent(new Event("ipacx_config_updated"));
+      setSavedSuccess("✅ Hospital Branding & DICOM Viewer links updated! Changes saved permanently!");
       setTimeout(() => setSavedSuccess(""), 4000);
     } catch (err) {
       console.error("Save config error:", err);
@@ -399,10 +413,10 @@ const AdminDashboardV3 = () => {
                   </label>
                   <input
                     type="text"
-                    value={hospitalConfig.ohifViewerUrl || "http://192.168.1.7:8042/ohif/viewer"}
+                    value={hospitalConfig.ohifViewerUrl || "http://localhost:8042/ohif/viewer?StudyInstanceUIDs={studyUID}"}
                     onChange={(e) => setHospitalConfig({ ...hospitalConfig, ohifViewerUrl: e.target.value })}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-cyan-400 font-mono text-xs focus:border-cyan-500 focus:outline-none"
-                    placeholder="http://192.168.1.7:8042/ohif/viewer"
+                    placeholder="http://localhost:8042/ohif/viewer?StudyInstanceUIDs={studyUID}"
                   />
                 </div>
 
@@ -527,10 +541,10 @@ const AdminDashboardV3 = () => {
                 </label>
                 <input
                   type="text"
-                  value={hospitalConfig.ohifViewerUrl || "http://localhost:8043/ohif/viewer?StudyInstanceUIDs={studyUID}"}
+                  value={hospitalConfig.ohifViewerUrl || "http://localhost:8042/ohif/viewer?StudyInstanceUIDs={studyUID}"}
                   onChange={(e) => setHospitalConfig({ ...hospitalConfig, ohifViewerUrl: e.target.value })}
                   className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-cyan-300 font-mono focus:border-cyan-500 focus:outline-none"
-                  placeholder="http://localhost:8043/ohif/viewer?StudyInstanceUIDs={studyUID}"
+                  placeholder="http://localhost:8042/ohif/viewer?StudyInstanceUIDs={studyUID}"
                 />
                 <span className="text-[10px] text-slate-400">Placeholders: <code>{`{studyUID}`}</code>, <code>{`{host}`}</code></span>
               </div>

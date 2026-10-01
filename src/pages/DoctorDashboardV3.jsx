@@ -33,6 +33,7 @@ import DiagnosticWorkstationV3 from "../components/DoctorWorkstation/DiagnosticW
 import ReportingStudioV3 from "./ReportingStudioV3";
 import api from "../api/axios";
 import { useTheme } from "../utils/ThemeContext";
+import { getOhifViewerUrl as getOhifViewerUrlHelper } from "../utils/viewerUrl";
 
 const DoctorDashboardV3 = () => {
   const { theme } = useTheme();
@@ -64,22 +65,7 @@ const DoctorDashboardV3 = () => {
   }, []);
 
   const getOhifViewerUrl = (study) => {
-    const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
-    const studyUid = study?.study_uid || study?.id || "";
-    let baseUrl = `http://${host}:8043/ohif/viewer`;
-
-    const saved = localStorage.getItem("ipacx_hospital_config");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.ohifViewerUrl) baseUrl = parsed.ohifViewerUrl;
-      } catch (e) {}
-    }
-    const cleanUrl = baseUrl.trim();
-    if (cleanUrl.includes("?")) {
-      return `${cleanUrl}&StudyInstanceUIDs=${encodeURIComponent(studyUid)}`;
-    }
-    return `${cleanUrl}?StudyInstanceUIDs=${encodeURIComponent(studyUid)}`;
+    return getOhifViewerUrlHelper(study);
   };
 
   const fetchStudies = async () => {

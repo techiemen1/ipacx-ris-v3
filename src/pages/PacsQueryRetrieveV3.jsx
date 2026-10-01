@@ -19,6 +19,7 @@ import {
   X
 } from "lucide-react";
 import api from "../api/axios";
+import { getOhifViewerUrl } from "../utils/viewerUrl";
 
 const PacsQueryRetrieveV3 = () => {
   const [nodes, setNodes] = useState([
@@ -197,7 +198,7 @@ const PacsQueryRetrieveV3 = () => {
       case "WEASIS":
         return `weasis://$dicom:get -w "http://${host}:8042/wado?requestType=WADO&studyUID=${encUID}"`;
       case "OHIF":
-        return `http://${host}:8043/ohif/viewer?StudyInstanceUIDs=${encUID}`;
+        return getOhifViewerUrl(encUID);
       case "MOBILE_LITE":
         return `/v3/lite?study=${encUID}`;
       case "INTEGRATED":
