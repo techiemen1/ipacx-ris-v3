@@ -31,7 +31,9 @@ import {
   History,
   AlertOctagon,
   QrCode,
-  Volume2
+  Volume2,
+  Tag,
+  Info
 } from "lucide-react";
 import api from "../api/axios";
 
@@ -172,6 +174,7 @@ const ReportingStudioV3 = ({ study, onClose }) => {
   const [saveToast, setSaveToast] = useState("");
   const [copied, setCopied] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [showDicomTagModal, setShowDicomTagModal] = useState(false);
 
   // Helper: Generate SVG DICOM Snapshot Data URL for clean Key Image display
   const generateDicomOverlaySvg = (seriesDesc, sliceNum, totalSlices) => {
@@ -415,10 +418,12 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
                   {reportStatus}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium flex items-center gap-2">
+              <p className="text-[11px] text-slate-400 font-medium flex items-center gap-2 flex-wrap">
                 <span>Patient: <strong className="text-white">{study?.patient_name || "CHANDRASEKHAR^V"}</strong></span>
-                <span className="hidden sm:inline">• MRN: <strong className="text-cyan-400 font-mono">{study?.patient_mrn || "MRN-99812"}</strong></span>
+                <span className="hidden sm:inline">• MRN: <strong className="text-cyan-400 font-mono">{study?.patient_mrn || study?.patient_id || "MRN-99812"}</strong></span>
                 <span>• Modality: <strong className="text-purple-400">{study?.modality || "MR"}</strong></span>
+                <span>• ACC: <strong className="text-amber-400 font-mono">{study?.accession_no || study?.accession_number || study?.id || "ACC-1001"}</strong></span>
+                <span className="hidden md:inline">• Ref: <strong className="text-slate-200">{study?.referring_physician || "Self / Desk"}</strong></span>
               </p>
             </div>
           </div>
@@ -426,6 +431,16 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
           {/* Top Vendor Tools Header Actions */}
           <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
             
+            {/* DICOM TAGS INSPECTOR BUTTON */}
+            <button
+              onClick={() => setShowDicomTagModal(true)}
+              className="min-h-[38px] px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-cyan-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Inspect Full DICOM Header Tags"
+            >
+              <Tag size={15} />
+              <span>DICOM Tags</span>
+            </button>
+
             {/* AUDIO DICTATION WAVEFORM BUTTON */}
             <button
               onClick={() => setIsDictating(!isDictating)}
@@ -658,9 +673,13 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
                 {/* Patient Information Table */}
                 <div className="bg-slate-100 p-3 rounded-xl border border-slate-300 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-medium">
                   <div><span className="text-slate-500 block text-[10px]">PATIENT NAME</span><strong>{study?.patient_name || "CHANDRASEKHAR^V"}</strong></div>
-                  <div><span className="text-slate-500 block text-[10px]">MRN / PATIENT ID</span><strong className="font-mono">{study?.patient_mrn || "MRN-99812"}</strong></div>
+                  <div><span className="text-slate-500 block text-[10px]">MRN / PATIENT ID</span><strong className="font-mono">{study?.patient_mrn || study?.patient_id || "MRN-99812"}</strong></div>
                   <div><span className="text-slate-500 block text-[10px]">AGE / GENDER</span><strong>{study?.patient_age || "45Y"} / {study?.patient_sex || "M"}</strong></div>
                   <div><span className="text-slate-500 block text-[10px]">MODALITY</span><strong>{study?.modality || "MR"}</strong></div>
+                  <div><span className="text-slate-500 block text-[10px]">ACCESSION NO</span><strong className="font-mono text-amber-700">{study?.accession_no || study?.accession_number || study?.id || "ACC-1001"}</strong></div>
+                  <div><span className="text-slate-500 block text-[10px]">REFERRING PHYSICIAN</span><strong>{study?.referring_physician || "Self / Desk"}</strong></div>
+                  <div><span className="text-slate-500 block text-[10px]">INSTITUTION</span><strong>{study?.institution_name || "iPaCX RADIOLOGY CENTER"}</strong></div>
+                  <div><span className="text-slate-500 block text-[10px]">STUDY DATE</span><strong className="font-mono">{study?.study_date || "2026-10-01"}</strong></div>
                 </div>
 
                 {/* Report Sections */}
@@ -808,6 +827,66 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
         </div>
 
       </div>
+
+      {/* 🏷️ DICOM TAG INSPECTION MODAL */}
+      {showDicomTagModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-2xl w-full space-y-4 shadow-2xl max-h-[85vh] flex flex-col text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Tag className="text-cyan-400" size={18} />
+                <h3 className="font-black text-white text-base font-heading">DICOM 3.0 Header Tags Inspection</h3>
+              </div>
+              <button onClick={() => setShowDicomTagModal(false)} className="text-slate-400 hover:text-white cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 text-xs font-mono">
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                <div className="text-cyan-400 font-extrabold uppercase text-[11px]">Key Study Headers</div>
+                <div className="grid grid-cols-2 gap-2 text-slate-300">
+                  <div><span className="text-slate-500">Accession No:</span> <strong className="text-amber-400">{study?.accession_no || study?.accession_number || study?.id || "ACC-1001"}</strong></div>
+                  <div><span className="text-slate-500">Referring Physician:</span> <strong className="text-purple-300">{study?.referring_physician || "Self / Desk"}</strong></div>
+                  <div><span className="text-slate-500">Institution:</span> <strong className="text-emerald-400">{study?.institution_name || "iPaCX RADIOLOGY CENTER"}</strong></div>
+                  <div><span className="text-slate-500">Patient MRN:</span> <strong className="text-cyan-300">{study?.patient_mrn || study?.patient_id || "MRN-1001"}</strong></div>
+                  <div><span className="text-slate-500">Patient Name:</span> <strong className="text-white">{study?.patient_name || "UNNAMED PATIENT"}</strong></div>
+                  <div><span className="text-slate-500">Age / Sex:</span> <strong className="text-slate-200">{study?.patient_age || "35Y"} / {study?.patient_sex || "F"}</strong></div>
+                  <div><span className="text-slate-500">Modality:</span> <strong className="text-blue-400">{study?.modality || "MR"}</strong></div>
+                  <div><span className="text-slate-500">Study Date/Time:</span> <strong className="text-slate-300">{study?.study_date || "2026-10-01"} {study?.study_time || "08:30"}</strong></div>
+                  <div className="col-span-2"><span className="text-slate-500">Study Description:</span> <strong className="text-slate-200">{study?.study_description || "DICOM EXAMINATION"}</strong></div>
+                  <div className="col-span-2"><span className="text-slate-500">Study Instance UID:</span> <strong className="text-slate-400 text-[10px] break-all">{study?.study_uid || study?.id || "1.2.840.113619.2.55"}</strong></div>
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5">
+                <div className="text-purple-400 font-extrabold uppercase text-[11px]">Raw DICOM Dictionary Tags</div>
+                {study?.dicom_tags && Object.keys(study.dicom_tags).length > 0 ? (
+                  Object.entries(study.dicom_tags).map(([key, val]) => (
+                    <div key={key} className="flex items-center justify-between border-b border-slate-900 py-1 text-[11px]">
+                      <span className="text-slate-400 font-bold">{key}:</span>
+                      <span className="text-cyan-300 font-mono text-right">{typeof val === "object" ? JSON.stringify(val) : String(val)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-slate-500 text-[11px] italic py-2">
+                    Standard DICOM 3.0 tags pre-loaded from Orthanc PACS gateway.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setShowDicomTagModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs cursor-pointer"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

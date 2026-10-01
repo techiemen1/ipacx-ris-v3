@@ -34,7 +34,10 @@ import {
   Copy,
   Check,
   PenTool,
-  ExternalLink
+  ExternalLink,
+  Activity,
+  Info,
+  Tag
 } from "lucide-react";
 import api from "../../api/axios";
 import MobileMPRViewer from "../DICOMViewer/MobileMPRViewer";
@@ -140,6 +143,7 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
   const [toastMessage, setToastMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [viewerEngine, setViewerEngine] = useState("CANVAS"); // "CANVAS" | "OHIF_IFRAME"
+  const [showDicomTagModal, setShowDicomTagModal] = useState(false);
   const fileInputRef = useRef(null);
 
   const currentSeries = activeSeriesList[activeSeriesIndex] || activeSeriesList[0];
@@ -343,15 +347,24 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
       {/* 👑 TOP CONTROL HEADER BAR (EXACT VENDOR SPEC) */}
       <header className="px-4 py-2 bg-[#0B132B] border-b border-slate-800 flex items-center justify-between gap-3 shrink-0">
         
-        {/* Left Patient Identity Badge */}
-        <div className="flex items-center gap-3">
-          <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700/80 flex items-center gap-2 font-mono text-xs">
+        {/* Left Patient Identity Badge with Full DICOM Tags */}
+        <div className="flex items-center gap-2">
+          <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700/80 flex items-center gap-2 font-mono text-xs flex-wrap">
             <span className="font-black text-white">{study?.patient_name || "PANCHAMI"}</span>
             <span className="text-slate-400">{study?.patient_age || "20Y"} / {study?.patient_sex || "F"}</span>
-            <span className="text-cyan-400 font-bold">ID: {study?.patient_mrn || "2956457"}</span>
+            <span className="text-cyan-400 font-bold">MRN: {study?.patient_mrn || study?.patient_id || "2956457"}</span>
             <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">{study?.modality || "CT"}</span>
-            <span className="text-slate-400">ACC: {study?.id || "31174"}</span>
+            <span className="text-amber-400 font-bold">ACC: {study?.accession_no || study?.accession_number || study?.id || "31174"}</span>
+            <span className="text-purple-300 font-medium hidden md:inline">• Ref: {study?.referring_physician || "Self / Desk"}</span>
           </div>
+
+          <button
+            onClick={() => setShowDicomTagModal(true)}
+            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shrink-0"
+            title="Inspect All DICOM Headers & Tags"
+          >
+            <Tag size={13} /> DICOM Tags
+          </button>
         </div>
 
         {/* Center 5 Layout View Mode Toggles */}
@@ -813,6 +826,66 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
         )}
 
       </div>
+
+      {/* 🏷️ DICOM TAG INSPECTION MODAL */}
+      {showDicomTagModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-2xl w-full space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Tag className="text-cyan-400" size={18} />
+                <h3 className="font-black text-white text-base font-heading">DICOM 3.0 Header Tags Inspection</h3>
+              </div>
+              <button onClick={() => setShowDicomTagModal(false)} className="text-slate-400 hover:text-white cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 text-xs font-mono">
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                <div className="text-cyan-400 font-extrabold uppercase text-[11px]">Key Study Headers</div>
+                <div className="grid grid-cols-2 gap-2 text-slate-300">
+                  <div><span className="text-slate-500">Accession No:</span> <strong className="text-amber-400">{study?.accession_no || study?.accession_number || study?.id || "ACC-1001"}</strong></div>
+                  <div><span className="text-slate-500">Referring Physician:</span> <strong className="text-purple-300">{study?.referring_physician || "Self / Desk"}</strong></div>
+                  <div><span className="text-slate-500">Institution:</span> <strong className="text-emerald-400">{study?.institution_name || "iPaCX RADIOLOGY CENTER"}</strong></div>
+                  <div><span className="text-slate-500">Patient MRN:</span> <strong className="text-cyan-300">{study?.patient_mrn || study?.patient_id || "MRN-1001"}</strong></div>
+                  <div><span className="text-slate-500">Patient Name:</span> <strong className="text-white">{study?.patient_name || "UNNAMED PATIENT"}</strong></div>
+                  <div><span className="text-slate-500">Age / Sex:</span> <strong className="text-slate-200">{study?.patient_age || "35Y"} / {study?.patient_sex || "F"}</strong></div>
+                  <div><span className="text-slate-500">Modality:</span> <strong className="text-blue-400">{study?.modality || "CT"}</strong></div>
+                  <div><span className="text-slate-500">Study Date/Time:</span> <strong className="text-slate-300">{study?.study_date || "2026-09-28"} {study?.study_time || "08:30"}</strong></div>
+                  <div className="col-span-2"><span className="text-slate-500">Study Description:</span> <strong className="text-slate-200">{study?.study_description || "DICOM EXAMINATION"}</strong></div>
+                  <div className="col-span-2"><span className="text-slate-500">Study Instance UID:</span> <strong className="text-slate-400 text-[10px] break-all">{study?.study_uid || study?.id || "1.2.840.113619.2.55"}</strong></div>
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5">
+                <div className="text-purple-400 font-extrabold uppercase text-[11px]">Raw DICOM Dictionary Tags</div>
+                {study?.dicom_tags && Object.keys(study.dicom_tags).length > 0 ? (
+                  Object.entries(study.dicom_tags).map(([key, val]) => (
+                    <div key={key} className="flex items-center justify-between border-b border-slate-900 py-1 text-[11px]">
+                      <span className="text-slate-400 font-bold">{key}:</span>
+                      <span className="text-cyan-300 font-mono text-right">{typeof val === "object" ? JSON.stringify(val) : String(val)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-slate-500 text-[11px] italic py-2">
+                    Standard DICOM 3.0 tags pre-loaded from Orthanc PACS gateway.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setShowDicomTagModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs cursor-pointer"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

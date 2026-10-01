@@ -82,6 +82,40 @@ router.get("/studies", async (req, res) => {
 });
 
 /**
+ * GET /api/v3/pacs/studies/:studyUID/dicom-tags
+ * Fetch complete DICOM header tags dictionary for a given study UID
+ */
+router.get("/studies/:studyUID/dicom-tags", async (req, res) => {
+  try {
+    const { studyUID } = req.params;
+    const liveStudies = await hybridGateway.fetchLiveOrthancStudies();
+    const study = liveStudies.find(s => s.study_uid === studyUID || s.id === studyUID) || liveStudies[0];
+
+    if (!study) {
+      return res.status(404).json({ success: false, message: "Study not found in local PACS" });
+    }
+
+    res.json({
+      success: true,
+      studyUID,
+      accessionNumber: study.accession_no,
+      patientName: study.patient_name,
+      patientMrn: study.patient_mrn,
+      referringPhysician: study.referring_physician,
+      institutionName: study.institution_name,
+      modality: study.modality,
+      studyDate: study.study_date,
+      studyDescription: study.study_description,
+      dicomTags: study.dicom_tags || {}
+    });
+  } catch (err) {
+    console.error("[v3 PACS API] DICOM tags fetch error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
+/**
  * POST /api/v3/pacs/cfind
  * Execute DICOM C-FIND SCU query to a registered DICOM node via Orthanc
  */

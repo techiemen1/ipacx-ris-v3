@@ -334,54 +334,115 @@ async function fetchLiveOrthancStudies() {
 
     const res = await axios.get(`${orthancUrl}studies?expand`, { auth, timeout: 5000 });
     if (Array.isArray(res.data) && res.data.length > 0) {
-      return res.data.map(study => {
-        const tags = study.MainDicomTags || {};
-        const pTags = study.PatientMainDicomTags || {};
-        const studyDateRaw = tags.StudyDate || "20260928";
-        const studyTimeRaw = tags.StudyTime || "083000";
-        
-        const formattedDate = `${studyDateRaw.substring(0,4)}-${studyDateRaw.substring(4,6)}-${studyDateRaw.substring(6,8)} ${studyTimeRaw.substring(0,2)}:${studyTimeRaw.substring(2,4)}`;
-        const seriesCount = Array.isArray(study.Series) ? study.Series.length : 1;
+      const mappedStudies = await Promise.all(
+        res.data.map(async (study) => {
+          const tags = study.MainDicomTags || {};
+          const pTags = study.PatientMainDicomTags || {};
+          const studyDateRaw = tags.StudyDate || "20260928";
+          const studyTimeRaw = tags.StudyTime || "083000";
+          
+          const formattedDate = `${studyDateRaw.substring(0,4)}-${studyDateRaw.substring(4,6)}-${studyDateRaw.substring(6,8)} ${studyTimeRaw.substring(0,2)}:${studyTimeRaw.substring(2,4)}`;
+          const seriesCount = Array.isArray(study.Series) ? study.Series.length : 1;
 
-        let rawMod = tags.Modality || tags.ModalitiesInStudy || null;
-        if (Array.isArray(rawMod)) rawMod = rawMod[0];
+          let rawMod = tags.Modality || tags.ModalitiesInStudy || null;
+          if (Array.isArray(rawMod)) rawMod = rawMod[0];
 
-        let finalModality = rawMod ? String(rawMod).toUpperCase() : null;
+          let finalModality = rawMod ? String(rawMod).toUpperCase() : null;
 
-        if (!finalModality || finalModality === "UNKNOWN") {
-          const sDescUpper = (tags.StudyDescription || "").toUpperCase();
-          if (sDescUpper.includes("MRI") || sDescUpper.includes("MAGNETIC") || sDescUpper.includes("FOOT AND ANKLE") || sDescUpper.includes("LS SPINE")) {
-            finalModality = "MR";
-          } else if (sDescUpper.includes("CT") || sDescUpper.includes("HEAD^") || sDescUpper.includes("BRAIN") || sDescUpper.includes("SINUS")) {
-            finalModality = "CT";
-          } else if (sDescUpper.includes("CHEST PA") || sDescUpper.includes("X-RAY")) {
-            finalModality = "CR";
-          } else if (sDescUpper.includes("US") || sDescUpper.includes("ULTRASOUND") || sDescUpper.includes("PELVIS")) {
-            finalModality = "US";
-          } else {
-            finalModality = "CR";
+          if (!finalModality || finalModality === "UNKNOWN") {
+            const sDescUpper = (tags.StudyDescription || "").toUpperCase();
+            if (sDescUpper.includes("MRI") || sDescUpper.includes("MAGNETIC") || sDescUpper.includes("FOOT AND ANKLE") || sDescUpper.includes("LS SPINE")) {
+              finalModality = "MR";
+            } else if (sDescUpper.includes("CT") || sDescUpper.includes("HEAD^") || sDescUpper.includes("BRAIN") || sDescUpper.includes("SINUS")) {
+              finalModality = "CT";
+            } else if (sDescUpper.includes("CHEST PA") || sDescUpper.includes("X-RAY")) {
+              finalModality = "CR";
+            } else if (sDescUpper.includes("US") || sDescUpper.includes("ULTRASOUND") || sDescUpper.includes("PELVIS")) {
+              finalModality = "US";
+            } else {
+              finalModality = "CR";
+            }
           }
-        }
 
-        return {
-          id: study.ID,
-          study_uid: tags.StudyInstanceUID || study.ID,
-          patient_mrn: pTags.PatientID || "PACS-AUTO",
-          patient_name: pTags.PatientName ? pTags.PatientName.replace(/\^/g, " ") : "UNNAMED PATIENT",
-          patient_age: pTags.PatientBirthDate ? `${new Date().getFullYear() - parseInt(pTags.PatientBirthDate.substring(0,4), 10)}Y` : "35Y",
-          patient_sex: pTags.PatientSex || "F",
-          modality: finalModality,
-          study_description: tags.StudyDescription || "DICOM EXAMINATION",
-          study_date: formattedDate,
-          total_series: seriesCount,
-          total_instances: seriesCount * 24,
-          is_stat: tags.StudyDescription ? tags.StudyDescription.toUpperCase().includes("EMERGENCY") : false,
-          status: "UNREPORTED",
-          ai_recommendation: tags.StudyDescription ? `Live Orthanc Study: ${tags.StudyDescription}` : "PACS Study Ingest Complete",
-          node_source: "ORTHANC_PACS",
-          fetch_status: "IN_LOCAL_PACS"
-        };
-      });
+          const accessionNo = tags.AccessionNumber || pTags.AccessionNumber || "ACC-" + (study.ID ? study.ID.substring(0, 8) : "1001");
+          const referringPhysician = tags.ReferringPhysicianName ? String(tags.ReferringPhysicianName).replace(/\^/g, " ") : "Self / Desk";
+          const institutionName = tags.InstitutionName || tags.InstitutionalDepartmentName || "iPaCX RADIOLOGY CENTER";
+          const patientId = pTags.PatientID || tags.PatientID || "MRN-1001";
+          const patientName = pTags.PatientName ? String(pTags.PatientName).replace(/\^/g, " ") : (tags.PatientName ? String(tags.PatientName).replace(/\^/g, " ") : "UNNAMED PATIENT");
+          const patientAge = pTags.PatientBirthDate ? `${new Date().getFullYear() - parseInt(pTags.PatientBirthDate.substring(0,4), 10)}Y` : (tags.PatientAge || "35Y");
+          const patientSex = pTags.PatientSex || tags.PatientSex || "F";
+          const studyId = tags.StudyID || "ST-" + (study.ID ? study.ID.substring(0, 6) : "101");
+          const studyUid = tags.StudyInstanceUID || study.ID;
+
+          // Build lightweight series list summary if available
+          let seriesList = [];
+          if (Array.isArray(study.Series) && study.Series.length > 0) {
+            seriesList = study.Series.map((sId, idx) => ({
+              series_id: sId,
+              series_instance_uid: sId,
+              series_description: `Series ${idx + 1} (${finalModality})`,
+              modality: finalModality,
+              total_slices: 24,
+              instances: []
+            }));
+          }
+
+          return {
+            id: study.ID,
+            study_uid: studyUid,
+            patient_mrn: patientId,
+            patient_id: patientId,
+            patient_name: patientName,
+            patient_age: patientAge,
+            patient_sex: patientSex,
+            modality: finalModality,
+            study_description: tags.StudyDescription || "DICOM EXAMINATION",
+            study_date: formattedDate,
+            study_time: studyTimeRaw,
+            study_id: studyId,
+            accession_no: accessionNo,
+            accession_number: accessionNo,
+            referring_physician: referringPhysician,
+            institution_name: institutionName,
+            total_series: seriesCount,
+            total_instances: seriesCount * 24,
+            series_list: seriesList,
+            is_stat: tags.StudyDescription ? tags.StudyDescription.toUpperCase().includes("EMERGENCY") : false,
+            status: "UNREPORTED",
+            ai_recommendation: tags.StudyDescription ? `Live Orthanc Study: ${tags.StudyDescription}` : "PACS Study Ingest Complete",
+            node_source: "ORTHANC_PACS",
+            fetch_status: "IN_LOCAL_PACS",
+            dicom_tags: {
+              "(0008,0050) AccessionNumber": accessionNo,
+              "(0008,0090) ReferringPhysicianName": referringPhysician,
+              "(0008,0080) InstitutionName": institutionName,
+              "(0008,1030) StudyDescription": tags.StudyDescription || "DICOM EXAMINATION",
+              "(0010,0020) PatientID": patientId,
+              "(0010,0010) PatientName": patientName,
+              "(0010,0030) PatientBirthDate": pTags.PatientBirthDate || "19900101",
+              "(0010,0040) PatientSex": patientSex,
+              "(0008,0020) StudyDate": studyDateRaw,
+              "(0008,0030) StudyTime": studyTimeRaw,
+              "(0008,0060) Modality": finalModality,
+              "(0020,000D) StudyInstanceUID": studyUid,
+              "(0020,0010) StudyID": studyId,
+              AccessionNumber: accessionNo,
+              ReferringPhysicianName: referringPhysician,
+              InstitutionName: institutionName,
+              PatientID: patientId,
+              PatientName: patientName,
+              PatientAge: patientAge,
+              PatientSex: patientSex,
+              Modality: finalModality,
+              StudyDescription: tags.StudyDescription || "DICOM EXAMINATION",
+              StudyDate: formattedDate,
+              StudyInstanceUID: studyUid,
+              StudyID: studyId
+            }
+          };
+        })
+      );
+      return mappedStudies;
     }
   } catch (err) {
     console.warn("[v3 Hybrid Gateway] fetchLiveOrthancStudies error:", err.message);
