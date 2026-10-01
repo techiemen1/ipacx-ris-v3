@@ -240,12 +240,12 @@ const AdminDashboardV3 = () => {
             {/* DICOM & OHIF VIEWER CONFIGURATION */}
             <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-3">
               <div className="text-xs font-extrabold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
-                <Settings size={14} /> DICOM Image Viewer & OHIF Gateway Link
+                <Settings size={14} /> DICOM Image Viewer & Facility Theme Default
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">
-                    OHIF / DICOM Viewer Base URL (e.g. http://192.168.1.7:8042/ohif/viewer)
+                    OHIF / DICOM Viewer Base URL
                   </label>
                   <input
                     type="text"
@@ -258,7 +258,7 @@ const AdminDashboardV3 = () => {
 
                 <div>
                   <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">
-                    Primary Reporting Workstation Mode
+                    Primary Workstation Mode
                   </label>
                   <select
                     value={hospitalConfig.preferredViewer || "50:50"}
@@ -266,14 +266,32 @@ const AdminDashboardV3 = () => {
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-bold text-xs focus:border-cyan-500 focus:outline-none"
                   >
                     <option value="50:50">⚡ 50:50 Side-by-Side Dual-Pane Report Studio (Recommended)</option>
-                    <option value="WEASIS">🚀 Weasis Native DICOM Viewer (weasis:// protocol launcher)</option>
-                    <option value="OHIF">🌐 External OHIF Viewer Link (http://192.168.1.7:8042/ohif/viewer)</option>
+                    <option value="WEASIS">🚀 Weasis Native DICOM Viewer (weasis:// launcher)</option>
+                    <option value="OHIF">🌐 External OHIF Viewer Link</option>
                     <option value="MOBILE_LITE">📱 Mobile Lite Touch WebGL 3D Viewer</option>
                   </select>
+                </div>
 
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase text-[10px] mb-1">
+                    Facility Default UI Theme Mode
+                  </label>
+                  <select
+                    value={hospitalConfig.defaultTheme || "LIGHT"}
+                    onChange={(e) => {
+                      const newTheme = e.target.value;
+                      setHospitalConfig({ ...hospitalConfig, defaultTheme: newTheme });
+                      localStorage.setItem("ipacx_theme", newTheme);
+                    }}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold text-xs focus:border-cyan-500 focus:outline-none"
+                  >
+                    <option value="LIGHT">☀️ Soft Clinical Light (Calm & Bright)</option>
+                    <option value="DARK">🌙 AI Wonder Dark Glass (Reading Room)</option>
+                  </select>
                 </div>
               </div>
             </div>
+
 
             <div className="pt-4 border-t border-slate-800 flex justify-end">
               <button

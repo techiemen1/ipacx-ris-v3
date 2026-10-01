@@ -8,17 +8,51 @@
 
 :root {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  color-scheme: dark;
+  color-scheme: light dark;
+}
+
+/* Light Theme Tokens - Soft Clinical Light */
+html.theme-light body, body.theme-light {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+html.theme-light .glass-panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.15);
+}
+
+html.theme-light .glass-panel-interactive {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html.theme-light .glass-panel-interactive:hover {
+  border-color: rgba(2, 132, 199, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -5px rgba(2, 132, 199, 0.15);
+}
+
+/* Dark Theme Tokens - AI Wonder Dark Glass */
+html.theme-dark body, body.theme-dark {
+  background-color: #020617;
+  color: #f8fafc;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #020617;
-  color: #f8fafc;
+  transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
+
 
 h1, h2, h3, h4, .font-heading {
   font-family: 'Outfit', sans-serif;

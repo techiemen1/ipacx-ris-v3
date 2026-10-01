@@ -29,8 +29,12 @@ import {
 import { Link } from "react-router-dom";
 import DiagnosticWorkstationV3 from "../components/DoctorWorkstation/DiagnosticWorkstationV3";
 import api from "../api/axios";
+import { useTheme } from "../utils/ThemeContext";
 
 const DoctorDashboardV3 = () => {
+  const { theme } = useTheme();
+  const isLight = theme === "LIGHT";
+
   const [studies, setStudies] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [modalityFilter, setModalityFilter] = useState("ALL");
@@ -40,6 +44,7 @@ const DoctorDashboardV3 = () => {
   const [selectedStudy, setSelectedStudy] = useState(null);
   const [showWorkstation, setShowWorkstation] = useState(false);
   const [loading, setLoading] = useState(false);
+
 
   const [telemetry, setTelemetry] = useState({
     totalToday: 48,
@@ -172,10 +177,14 @@ const DoctorDashboardV3 = () => {
     });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-3 md:p-5 space-y-3 font-sans">
+    <div className={`min-h-screen p-3 md:p-5 space-y-3 font-sans transition-colors ${
+      isLight ? "bg-slate-50 text-slate-900" : "bg-slate-950 text-slate-100"
+    }`}>
       
       {/* 🌟 ULTRA-COMPACT HEADER & TELEMETRY STRIP */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/80 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-xl shadow-xl">
+      <div className={`flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-2xl border backdrop-blur-xl shadow-xl transition-all ${
+        isLight ? "bg-white/90 border-slate-200 shadow-slate-200/50" : "bg-slate-900/80 border-slate-800/80"
+      }`}>
         
         {/* Title & Compact Inline Telemetry */}
         <div className="flex items-center gap-3 flex-wrap">
@@ -183,41 +192,43 @@ const DoctorDashboardV3 = () => {
             <div className="p-2 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/30">
               <Activity size={18} />
             </div>
-            <h1 className="text-base font-black text-white tracking-tight font-heading">
+            <h1 className={`text-base font-black tracking-tight font-heading ${isLight ? "text-slate-900" : "text-white"}`}>
               Radiology Worklist
             </h1>
           </div>
 
-          <div className="h-4 w-px bg-slate-800 hidden sm:block"></div>
+          <div className={`h-4 w-px hidden sm:block ${isLight ? "bg-slate-200" : "bg-slate-800"}`}></div>
 
           {/* Compact Telemetry Pills */}
           <div className="flex items-center gap-1.5 text-xs font-bold flex-wrap">
-            <span className="px-2.5 py-1 rounded-lg bg-slate-950 text-slate-300 border border-slate-800 flex items-center gap-1">
+            <span className={`px-2.5 py-1 rounded-lg border flex items-center gap-1 ${
+              isLight ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-slate-950 text-slate-300 border-slate-800"
+            }`}>
               <span>Today:</span>
-              <span className="text-white font-black">{telemetry.totalToday}</span>
+              <span className={`font-black ${isLight ? "text-slate-900" : "text-white"}`}>{telemetry.totalToday}</span>
             </span>
 
-            <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+            <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30 flex items-center gap-1">
               <Clock size={12} />
               <span>Unreported:</span>
-              <span className="font-black text-amber-400">{telemetry.pendingUnreported}</span>
+              <span className="font-black text-amber-600 dark:text-amber-400">{telemetry.pendingUnreported}</span>
             </span>
 
-            <span className="px-2.5 py-1 rounded-lg bg-red-500/10 text-red-300 border border-red-500/30 flex items-center gap-1">
+            <span className="px-2.5 py-1 rounded-lg bg-red-500/10 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-500/30 flex items-center gap-1">
               <Zap size={12} />
               <span>STAT:</span>
-              <span className="font-black text-red-400">{telemetry.statEmergency}</span>
+              <span className="font-black text-red-600 dark:text-red-400">{telemetry.statEmergency}</span>
             </span>
 
-            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 flex items-center gap-1">
               <CheckCircle2 size={12} />
               <span>Finalized:</span>
-              <span className="font-black text-emerald-400">{telemetry.finalizedCount}</span>
+              <span className="font-black text-emerald-600 dark:text-emerald-400">{telemetry.finalizedCount}</span>
             </span>
 
-            <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+            <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-500/30 flex items-center gap-1">
               <span>TAT:</span>
-              <span className="font-black text-cyan-400">{telemetry.avgTurnaroundMin}m</span>
+              <span className="font-black text-cyan-600 dark:text-cyan-400">{telemetry.avgTurnaroundMin}m</span>
             </span>
           </div>
         </div>
@@ -226,19 +237,26 @@ const DoctorDashboardV3 = () => {
         <div className="flex items-center gap-2">
           <Link
             to="/pacs-nodes"
-            className="px-3 py-1.5 bg-slate-950 hover:bg-slate-900 text-cyan-300 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all ${
+              isLight
+                ? "bg-slate-100 hover:bg-slate-200 text-cyan-700 border border-slate-300"
+                : "bg-slate-950 hover:bg-slate-900 text-cyan-300 border border-slate-700"
+            }`}
           >
             <Database size={13} /> PACS Fetch
           </Link>
           <button 
             onClick={fetchStudies}
-            className="p-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
+              isLight ? "bg-slate-100 border-slate-300 text-slate-600 hover:text-slate-900" : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+            }`}
             title="Refresh Worklist"
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
       </div>
+
 
       {/* 🔍 WORKLIST FILTERS & SEARCH */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/40 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-xl">

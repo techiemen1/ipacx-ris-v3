@@ -13,10 +13,13 @@ import UniversalAdvancedReportV3 from "./pages/UniversalAdvancedReportV3";
 import DoctorSignatureManagerV3 from "./components/DoctorWorkstation/DoctorSignatureManagerV3";
 import PacsQueryRetrieveV3 from "./pages/PacsQueryRetrieveV3";
 import ReportsArchiveV3 from "./pages/ReportsArchiveV3";
-import { Activity, ShieldCheck, Smartphone, UserPlus, CreditCard, Radio, Users, LogIn, LogOut, User, PenTool, Database, FileCheck } from "lucide-react";
+import { Activity, ShieldCheck, Smartphone, UserPlus, CreditCard, Radio, Users, LogIn, LogOut, User, PenTool, Database, FileCheck, Sun, Moon } from "lucide-react";
+import { ThemeProvider, useTheme } from "./utils/ThemeContext";
 
 const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
+
   if (location.pathname.startsWith("/v3/lite") || location.pathname === "/login" || location.pathname.startsWith("/advanced-report")) return null;
 
   const role = currentUser ? (currentUser.role || "RADIOLOGIST").toUpperCase() : "";
@@ -31,16 +34,18 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
   const showAdmin = role === "ADMIN";
   const showSig = role === "RADIOLOGIST" || role === "ADMIN";
 
+  const isLight = theme === "LIGHT";
+
   return (
-    <nav className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800/80 px-3 md:px-6 py-2 flex flex-wrap justify-between items-center sticky top-0 z-40 gap-2">
+    <nav className={`${isLight ? "bg-white/90 border-slate-200 text-slate-800" : "bg-slate-900/95 border-slate-800/80 text-slate-100"} backdrop-blur-md border-b px-3 md:px-6 py-2 flex flex-wrap justify-between items-center sticky top-0 z-40 gap-2 transition-colors`}>
       {/* Brand Logo */}
       <Link to="/" className="flex items-center gap-2 shrink-0">
         <div className="p-1.5 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/30">
           <Activity size={18} />
         </div>
         <div>
-          <span className="font-extrabold text-white text-sm md:text-base tracking-tight font-heading">iPaCX RIS/PACS</span>
-          <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hidden sm:inline-block">
+          <span className={`font-extrabold text-sm md:text-base tracking-tight font-heading ${isLight ? "text-slate-900" : "text-white"}`}>iPaCX RIS/PACS</span>
+          <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 hidden sm:inline-block">
             v3.0
           </span>
         </div>
@@ -54,7 +59,7 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
             className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all ${
               location.pathname === "/"
                 ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
-                : "bg-slate-950/80 text-slate-400 hover:text-white"
+                : isLight ? "bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200" : "bg-slate-950/80 text-slate-400 hover:text-white"
             }`}
           >
             <Activity size={13} /> <span>Worklist</span>
@@ -67,7 +72,7 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
             className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all ${
               location.pathname === "/pacs-nodes"
                 ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
-                : "bg-slate-950/80 text-slate-400 hover:text-white"
+                : isLight ? "bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200" : "bg-slate-950/80 text-slate-400 hover:text-white"
             }`}
           >
             <Database size={13} /> <span>PACS Nodes</span>
@@ -80,7 +85,7 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
             className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all ${
               location.pathname === "/reports"
                 ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-                : "bg-slate-950/80 text-slate-400 hover:text-white"
+                : isLight ? "bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200" : "bg-slate-950/80 text-slate-400 hover:text-white"
             }`}
           >
             <FileCheck size={13} /> <span>Finalized Reports</span>
@@ -93,7 +98,7 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
             className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all ${
               location.pathname === "/patient-registration"
                 ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
-                : "bg-slate-950/80 text-slate-400 hover:text-white"
+                : isLight ? "bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200" : "bg-slate-950/80 text-slate-400 hover:text-white"
             }`}
           >
             <UserPlus size={13} /> <span>Reception</span>
@@ -106,7 +111,7 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
             className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all ${
               location.pathname === "/billing"
                 ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-                : "bg-slate-950/80 text-slate-400 hover:text-white"
+                : isLight ? "bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200" : "bg-slate-950/80 text-slate-400 hover:text-white"
             }`}
           >
             <CreditCard size={13} /> <span>Billing & QR</span>
@@ -119,7 +124,7 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
             className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all ${
               location.pathname === "/mwl-manager"
                 ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
-                : "bg-slate-950/80 text-slate-400 hover:text-white"
+                : isLight ? "bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200" : "bg-slate-950/80 text-slate-400 hover:text-white"
             }`}
           >
             <Radio size={13} /> <span>Technician MWL</span>
@@ -132,7 +137,7 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
             className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all ${
               location.pathname === "/hr-users"
                 ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                : "bg-slate-950/80 text-slate-400 hover:text-white"
+                : isLight ? "bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200" : "bg-slate-950/80 text-slate-400 hover:text-white"
             }`}
           >
             <Users size={13} /> <span>HR Roster</span>
@@ -145,7 +150,7 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
             className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all ${
               location.pathname === "/admin"
                 ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
-                : "bg-slate-950/80 text-slate-400 hover:text-white"
+                : isLight ? "bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200" : "bg-slate-950/80 text-slate-400 hover:text-white"
             }`}
           >
             <ShieldCheck size={13} /> <span>Admin</span>
@@ -155,23 +160,39 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
         {showSig && (
           <button
             onClick={onOpenSignatureModal}
-            className="px-2.5 py-1.5 bg-slate-900 border border-slate-700 hover:border-cyan-500 text-cyan-300 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all cursor-pointer"
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+              isLight ? "bg-slate-100 border border-slate-300 text-cyan-700 hover:border-cyan-500" : "bg-slate-900 border border-slate-700 text-cyan-300 hover:border-cyan-500"
+            }`}
           >
             <PenTool size={13} /> <span>Signature & QR</span>
           </button>
         )}
 
+        {/* 1-CLICK SUN / MOON THEME TOGGLE SWITCHER */}
+        <button
+          onClick={toggleTheme}
+          title={isLight ? "Switch to AI Wonder Dark Mode" : "Switch to Soft Clinical Light Mode"}
+          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
+            isLight
+              ? "bg-amber-500/10 text-amber-700 border-amber-300 hover:bg-amber-500/20"
+              : "bg-cyan-500/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/30"
+          }`}
+        >
+          {isLight ? <Sun size={14} className="text-amber-600" /> : <Moon size={14} className="text-cyan-400" />}
+          <span className="hidden sm:inline">{isLight ? "Clinical Light" : "AI Dark"}</span>
+        </button>
+
         {/* User Profile / Logout Badge */}
-        <div className="pl-2 border-l border-slate-800 flex items-center gap-2 shrink-0">
+        <div className="pl-2 border-l border-slate-300 dark:border-slate-800 flex items-center gap-2 shrink-0">
           {currentUser ? (
-            <div className="flex items-center gap-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
-              <User size={13} className="text-cyan-400" />
-              <div className="text-xs font-extrabold text-white leading-tight max-w-[140px] truncate">
+            <div className={`flex items-center gap-2 px-2.5 py-1 rounded-xl border ${isLight ? "bg-slate-100 border-slate-300" : "bg-slate-950 border-slate-800"}`}>
+              <User size={13} className="text-cyan-600 dark:text-cyan-400" />
+              <div className={`text-xs font-extrabold leading-tight max-w-[140px] truncate ${isLight ? "text-slate-900" : "text-white"}`}>
                 {currentUser.fullName || currentUser.username}
               </div>
               <button
                 onClick={onLogout}
-                className="ml-1 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                className="ml-1 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
                 title="Sign Out"
               >
                 <LogOut size={14} />
@@ -191,8 +212,9 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
   );
 };
 
-const App = () => {
+const MainAppContent = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("ipacx_user");
     if (saved) {
@@ -209,8 +231,10 @@ const App = () => {
     navigate("/login");
   };
 
+  const isLight = theme === "LIGHT";
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className={`min-h-screen flex flex-col font-sans transition-colors ${isLight ? "bg-slate-50 text-slate-900" : "bg-slate-950 text-slate-100"}`}>
       <NavigationBar
         currentUser={currentUser}
         onLogout={handleLogout}
@@ -242,5 +266,12 @@ const App = () => {
   );
 };
 
+const App = () => (
+  <ThemeProvider>
+    <MainAppContent />
+  </ThemeProvider>
+);
+
 export default App;
+
 
