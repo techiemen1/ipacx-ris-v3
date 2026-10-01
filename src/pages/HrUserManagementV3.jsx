@@ -251,17 +251,29 @@ const HrUserManagementV3 = () => {
                 </td>
 
                 <td className="px-5 py-4">
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                  <button
+                    onClick={() => {
+                      const updated = users.map(item => item.id === u.id ? { ...item, status: item.status === "ACTIVE" ? "LOCKED" : "ACTIVE" } : item);
+                      setUsers(updated);
+                      localStorage.setItem("ipacx_users_db", JSON.stringify(updated));
+                      setSuccessBanner(`🔒 User ${u.username} status updated to ${u.status === "ACTIVE" ? "LOCKED" : "ACTIVE"}`);
+                      setTimeout(() => setSuccessBanner(""), 3000);
+                    }}
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${
+                      u.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
+                    }`}
+                    title="Click to Lock/Unlock User Account"
+                  >
                     {u.status}
-                  </span>
+                  </button>
                 </td>
 
-                <td className="px-5 py-4 text-right">
+                <td className="px-5 py-4 text-right space-x-2">
                   <button
                     onClick={() => setSelectedUserForRbac(u)}
-                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-indigo-300 rounded-xl text-xs font-bold border border-indigo-500/30 inline-flex items-center gap-1.5"
+                    className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-indigo-300 rounded-xl text-xs font-bold border border-indigo-500/30 inline-flex items-center gap-1 cursor-pointer"
                   >
-                    <Lock size={14} /> RBAC Matrix
+                    <Lock size={12} /> RBAC Rights
                   </button>
                 </td>
               </tr>
@@ -365,12 +377,29 @@ const HrUserManagementV3 = () => {
             </div>
 
             <div className="space-y-2.5">
-              {Object.entries(selectedUserForRbac.permissions).map(([permKey, permVal]) => (
+              {Object.entries(selectedUserForRbac.permissions || {}).map(([permKey, permVal]) => (
                 <div key={permKey} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-900 border border-slate-800">
                   <span className="font-bold text-white capitalize">{permKey.replace(/([A-Z])/g, " $1")}</span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${permVal ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}>
-                    {permVal ? "ALLOWED" : "DENIED"}
-                  </span>
+                  <button
+                    onClick={() => {
+                      const updatedUser = {
+                        ...selectedUserForRbac,
+                        permissions: {
+                          ...selectedUserForRbac.permissions,
+                          [permKey]: !permVal
+                        }
+                      };
+                      setSelectedUserForRbac(updatedUser);
+                      const updatedList = users.map(u => u.id === updatedUser.id ? updatedUser : u);
+                      setUsers(updatedList);
+                      localStorage.setItem("ipacx_users_db", JSON.stringify(updatedList));
+                    }}
+                    className={`px-3 py-1 rounded text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                      permVal ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30"
+                    }`}
+                  >
+                    {permVal ? "ALLOWED (Click to Revoke)" : "DENIED (Click to Grant)"}
+                  </button>
                 </div>
               ))}
             </div>

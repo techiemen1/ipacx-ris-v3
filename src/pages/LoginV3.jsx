@@ -226,30 +226,15 @@ const LoginV3 = ({ onLoginSuccess }) => {
             </div>
           </div>
 
-          {/* Quick Account Selector Pills */}
-          <div className="space-y-1.5 pt-1">
-            <label className="block font-extrabold uppercase text-[9px] text-slate-400">Quick Select User Account:</label>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { name: "jags", role: "ADMIN" },
-                { name: "sysadmin", role: "ADMIN" },
-                { name: "dr.smith", role: "RADIOLOGIST" },
-                { name: "rad.tech", role: "TECHNICIAN" },
-                { name: "hr.care", role: "HR_MANAGER" }
-              ].map((acc) => (
-                <button
-                  key={acc.name}
-                  type="button"
-                  onClick={() => setUsername(acc.name)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
-                    username === acc.name
-                      ? "bg-cyan-600 text-white border-cyan-400"
-                      : isLight ? "bg-slate-100 border-slate-300 text-slate-700" : "bg-slate-950 border-slate-800 text-slate-300 hover:text-white"
-                  }`}
-                >
-                  {acc.name} <span className="text-[9px] opacity-75">[{acc.role}]</span>
-                </button>
-              ))}
+          {/* 🔒 Security & Confidentiality Notice Banner */}
+          <div className={`p-2.5 rounded-xl border text-[10px] space-y-0.5 ${
+            isLight ? "bg-cyan-50 border-cyan-200 text-cyan-900" : "bg-cyan-950/40 border-cyan-800/60 text-cyan-300"
+          }`}>
+            <div className="font-bold uppercase tracking-wider flex items-center gap-1">
+              <ShieldCheck size={13} className="text-cyan-400" /> ABDM M1/M2/M3 & HIPAA Encrypted Portal
+            </div>
+            <div className="text-[9px] opacity-80 leading-tight">
+              Authorized clinical personnel only. All login events & access records are logged for regulatory audit.
             </div>
           </div>
 

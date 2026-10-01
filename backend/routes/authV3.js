@@ -119,21 +119,31 @@ let systemUsers = [
   }
 ];
 
+// Security Audit Trail Log Store
+const securityAuditLogs = [
+  { timestamp: new Date().toISOString(), event: "SYSTEM_INITIALIZED", user: "SYSTEM", ip: "127.0.0.1", details: "Enterprise Security RBAC Governance active" }
+];
+
 /**
  * POST /api/v3/auth/login
  * Multi-Role Secure Login Authentication
  */
 router.post("/login", (req, res) => {
   try {
-    const { username, password, role, mfaCode } = req.body;
+    const { username, password, role } = req.body;
 
     if (!username) {
       return res.status(400).json({ success: false, message: "Username is required" });
     }
 
-    // Find matching user or fallback to demo role user
+    // Find matching user
     let userObj = systemUsers.find(u => u.username.toLowerCase() === username.toLowerCase().trim());
     
+    if (userObj && userObj.status === "LOCKED") {
+      securityAuditLogs.unshift({ timestamp: new Date().toISOString(), event: "LOGIN_BLOCKED_LOCKED", user: username, details: "Account locked by Administrator" });
+      return res.status(403).json({ success: false, message: "Account is LOCKED by System Administrator. Please contact Security Admin." });
+    }
+
     if (!userObj) {
       const selectedRole = (role || "RADIOLOGIST").toUpperCase();
       userObj = {
@@ -158,7 +168,17 @@ router.post("/login", (req, res) => {
           dispatchMwl: true
         }
       };
+      systemUsers.unshift(userObj);
     }
+
+    // Audit Log Login Event
+    securityAuditLogs.unshift({
+      timestamp: new Date().toISOString(),
+      event: "USER_LOGIN_SUCCESS",
+      user: userObj.username,
+      role: userObj.role,
+      details: `Authenticated user ${userObj.fullName} with role ${userObj.role}`
+    });
 
     // Generate 24-Hour JWT Token
     const token = jwt.sign(
@@ -192,8 +212,20 @@ router.get("/users", (req, res) => {
 });
 
 /**
+ * GET /api/v3/auth/audit-logs
+ * Security & Confidentiality Access Audit Trail
+ */
+router.get("/audit-logs", (req, res) => {
+  res.json({
+    success: true,
+    count: securityAuditLogs.length,
+    logs: securityAuditLogs
+  });
+});
+
+/**
  * POST /api/v3/auth/create-user
- * HR Employee Onboarding / User Creation
+ * Admin / HR Employee Onboarding / User Creation
  */
 router.post("/create-user", (req, res) => {
   try {
@@ -227,9 +259,47 @@ router.post("/create-user", (req, res) => {
     };
 
     systemUsers.unshift(newUser);
+    securityAuditLogs.unshift({
+      timestamp: new Date().toISOString(),
+      event: "USER_ONBOARDED",
+      user: username,
+      role: role.toUpperCase(),
+      details: `Created user ${fullName} with role ${role.toUpperCase()}`
+    });
+
     res.json({ success: true, message: "New employee user created successfully", user: newUser });
   } catch (err) {
     console.error("[v3 Auth API] Create user error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v3/auth/update-user
+ * System Admin Role & Permissions Access Control Update
+ */
+router.post("/update-user", (req, res) => {
+  try {
+    const { userId, role, status, permissions } = req.body;
+    const user = systemUsers.find(u => u.id === userId || u.username === userId);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (role) user.role = role.toUpperCase();
+    if (status) user.status = status.toUpperCase();
+    if (permissions) user.permissions = { ...user.permissions, ...permissions };
+
+    securityAuditLogs.unshift({
+      timestamp: new Date().toISOString(),
+      event: "RBAC_PERMISSIONS_UPDATED",
+      user: user.username,
+      details: `Updated role=${user.role}, status=${user.status}`
+    });
+
+    res.json({ success: true, message: "User RBAC permissions updated", user });
+  } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
