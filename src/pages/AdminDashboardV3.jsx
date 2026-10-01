@@ -14,15 +14,19 @@ import {
   Building,
   Save,
   CheckCircle2,
-  Palette
+  Palette,
+  UserPlus,
+  Lock,
+  UserCheck
 } from "lucide-react";
 import PacsNodeModal from "../components/AdminPortal/PacsNodeModal";
+import HrUserManagementV3 from "./HrUserManagementV3";
 import api from "../api/axios";
 import { useTheme } from "../utils/ThemeContext";
 
 const AdminDashboardV3 = () => {
   const { model, setDesignModel } = useTheme();
-  const [activeTab, setActiveTab] = useState("hospital_branding"); // hospital_branding | pacs_nodes | users | settings
+  const [activeTab, setActiveTab] = useState("hospital_branding"); // hospital_branding | users_roles | hr_roster | pacs_nodes
 
   const [pacsNodes, setPacsNodes] = useState([]);
   const [showNodeModal, setShowNodeModal] = useState(false);
@@ -144,27 +148,49 @@ const AdminDashboardV3 = () => {
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex gap-3 mb-6 border-b border-slate-800 pb-2">
+      <div className="flex flex-wrap gap-2.5 mb-6 border-b border-slate-800 pb-2.5">
         <button
           onClick={() => setActiveTab("hospital_branding")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
             activeTab === "hospital_branding"
               ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/30"
-              : "bg-slate-900 text-slate-400 hover:text-white"
+              : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
           }`}
         >
-          <Building size={18} /> Hospital Branding & Login Settings
+          <Building size={16} /> Hospital Branding & Login Settings
+        </button>
+
+        <button
+          onClick={() => setActiveTab("users_roles")}
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
+            activeTab === "users_roles"
+              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
+              : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
+          }`}
+        >
+          <UserPlus size={16} /> User & Role Creation (RBAC)
+        </button>
+
+        <button
+          onClick={() => setActiveTab("hr_roster")}
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
+            activeTab === "hr_roster"
+              ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
+              : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
+          }`}
+        >
+          <Users size={16} /> HR Staff Roster & Medical Licenses
         </button>
 
         <button
           onClick={() => setActiveTab("pacs_nodes")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
             activeTab === "pacs_nodes"
               ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/30"
-              : "bg-slate-900 text-slate-400 hover:text-white"
+              : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
           }`}
         >
-          <Server size={18} /> PACS Nodes & VNA Gateway
+          <Server size={16} /> PACS Nodes & VNA Gateway
         </button>
       </div>
 
@@ -383,6 +409,13 @@ const AdminDashboardV3 = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* User & Role Creation Tab Content */}
+      {(activeTab === "users_roles" || activeTab === "hr_roster") && (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-2 overflow-hidden shadow-2xl">
+          <HrUserManagementV3 />
         </div>
       )}
 

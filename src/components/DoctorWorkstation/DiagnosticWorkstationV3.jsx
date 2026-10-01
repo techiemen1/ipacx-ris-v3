@@ -32,7 +32,8 @@ import {
   MicOff,
   Wand2,
   Copy,
-  Check
+  Check,
+  PenTool
 } from "lucide-react";
 import api from "../../api/axios";
 import MobileMPRViewer from "../DICOMViewer/MobileMPRViewer";
