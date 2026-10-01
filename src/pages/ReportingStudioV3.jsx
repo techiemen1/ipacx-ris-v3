@@ -25,11 +25,17 @@ import {
   BookOpen, 
   RotateCcw,
   Eye,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Mic,
+  MicOff,
+  History,
+  AlertOctagon,
+  QrCode,
+  Volume2
 } from "lucide-react";
 import api from "../api/axios";
 
-// 🌟 CLINICAL SUBSPECIALTY STRUCTURED REPORT TEMPLATES & MACROS
+// 🌟 TOP-VENDOR STRUCTURED SUBSPECIALTY REPORT TEMPLATES (ACR / RADLEX STANDARDS)
 const REPORT_TEMPLATES = [
   {
     id: "ob_isuog_2",
@@ -141,6 +147,12 @@ Abdomen & Pelvis:
   }
 ];
 
+// Mock Prior Studies for Historical Comparison Strip
+const HISTORICAL_PRIOR_STUDIES = [
+  { id: "prior_1", date: "2025-04-12", modality: "CT", description: "CT Chest Non-Contrast", result: "Normal lung aeration, no consolidation." },
+  { id: "prior_2", date: "2024-11-05", modality: "CR", description: "X-Ray Chest PA View", result: "Clear lung fields, normal cardiothoracic ratio." }
+];
+
 const ReportingStudioV3 = ({ study, onClose }) => {
   const [selectedTemplate, setSelectedTemplate] = useState(REPORT_TEMPLATES[0]);
   const [clinicalIndication, setClinicalIndication] = useState(study?.study_description || REPORT_TEMPLATES[0].indication);
@@ -150,6 +162,12 @@ const ReportingStudioV3 = ({ study, onClose }) => {
   const [attachedKeyImages, setAttachedKeyImages] = useState([]);
   const [reportStatus, setReportStatus] = useState(study?.status || "DRAFT");
   
+  // Advanced Top Vendor Features State
+  const [isDictating, setIsDictating] = useState(false);
+  const [isCriticalAlert, setIsCriticalAlert] = useState(study?.is_stat || false);
+  const [showPriorsDrawer, setShowPriorsDrawer] = useState(false);
+  const [selectedPrior, setSelectedPrior] = useState(null);
+
   const [isSaving, setIsSaving] = useState(false);
   const [saveToast, setSaveToast] = useState("");
   const [copied, setCopied] = useState(false);
@@ -162,6 +180,28 @@ const ReportingStudioV3 = ({ study, onClose }) => {
     }
   }, [study]);
 
+  // Audio Dictation voice simulation effect
+  useEffect(() => {
+    let dictationTimer = null;
+    if (isDictating) {
+      const phrases = [
+        "\n[Dictation: Lungs clear bilaterally without pleural effusion.]",
+        "\n[Dictation: Cardiac contours within normal limits.]",
+        "\n[Dictation: Impression: No acute diagnostic abnormality.]"
+      ];
+      let idx = 0;
+      dictationTimer = setInterval(() => {
+        if (idx < phrases.length) {
+          setFindings(prev => prev + phrases[idx]);
+          idx++;
+        } else {
+          setIsDictating(false);
+        }
+      }, 2500);
+    }
+    return () => { if (dictationTimer) clearInterval(dictationTimer); };
+  }, [isDictating]);
+
   const fetchExistingReport = async () => {
     try {
       const targetUid = study?.study_uid || study?.id;
@@ -173,6 +213,7 @@ const ReportingStudioV3 = ({ study, onClose }) => {
         if (rep.findings_text) setFindings(rep.findings_text);
         if (rep.impression_text) setImpression(rep.impression_text);
         if (rep.status) setReportStatus(rep.status);
+        if (rep.is_critical) setIsCriticalAlert(rep.is_critical);
       }
     } catch (e) {}
   };
@@ -193,7 +234,7 @@ const ReportingStudioV3 = ({ study, onClose }) => {
     setTechnique(tpl.technique);
     setFindings(tpl.findings);
     setImpression(tpl.impression);
-    setSaveToast(`Applied template: ${tpl.title}`);
+    setSaveToast(`Applied RadLex template: ${tpl.title}`);
     setTimeout(() => setSaveToast(""), 2000);
   };
 
@@ -204,12 +245,11 @@ const ReportingStudioV3 = ({ study, onClose }) => {
       return;
     }
 
-    // AI Medical Rule Logic to summarize findings
     let aiSummary = "AI DIAGNOSTIC IMPRESSION SUMMARY:\n";
     if (findings.toLowerCase().includes("no focal") || findings.toLowerCase().includes("normal") || findings.toLowerCase().includes("clear")) {
-      aiSummary += `1. Unremarkable ${study?.modality || "imaging"} study of the patient.\n2. No acute structural pathology, focal mass, or acute inflammation detected.`;
+      aiSummary += `1. Unremarkable ${study?.modality || "imaging"} examination.\n2. No acute structural pathology, focal mass, or acute inflammation detected.`;
     } else {
-      aiSummary += `1. Radiological findings noted as documented above.\n2. Clinical correlation with lab markers and follow-up recommended.`;
+      aiSummary += `1. Radiological findings noted as documented above.\n2. Clinical correlation with laboratory markers recommended.`;
     }
 
     setImpression(aiSummary);
@@ -225,7 +265,7 @@ const ReportingStudioV3 = ({ study, onClose }) => {
   };
 
   const handleCopyReport = () => {
-    const fullReport = `HOSPITAL RADIOLOGY REPORT
+    const fullReport = `IPACX HEALTHCARE RADIOLOGY REPORT
 Patient Name: ${study?.patient_name || 'CHANDRASEKHAR^V'}
 MRN: ${study?.patient_mrn || 'MRN-99812'} | Modality: ${study?.modality || 'MR'} | Date: ${study?.study_date || '2026-10-01'}
 
@@ -259,7 +299,8 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
         findingsText: findings,
         impressionText: impression,
         keyImages: attachedKeyImages,
-        status: statusToSet
+        status: statusToSet,
+        isCritical: isCriticalAlert
       }).catch(() => null);
 
       setReportStatus(statusToSet);
@@ -276,22 +317,22 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-2 md:p-4 overflow-hidden">
-      <div className="w-full h-full max-w-[1800px] max-h-[1000px] bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 overflow-hidden touch-manipulation">
+      <div className="w-full h-full max-w-[1920px] max-h-[1080px] bg-slate-950 border border-slate-800 rounded-2xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
         
-        {/* 🌟 WORLD-CLASS REPORTING STUDIO HEADER */}
-        <header className="px-6 py-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-4 shrink-0">
+        {/* 🌟 TOP VENDOR REPORTING STUDIO HEADER (POWERSCRIBE 360 / SECTRA MODEL) */}
+        <header className="px-4 md:px-6 py-2.5 bg-slate-900/95 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 text-white shadow-md shadow-cyan-600/30">
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-600 text-white shadow-md shadow-purple-600/30">
               <FileText size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-white text-base tracking-tight font-heading">
-                  Radiology Reporting Studio Pro
+                <h1 className="font-extrabold text-white text-sm md:text-base tracking-tight font-heading">
+                  PowerScribe Studio Pro
                 </h1>
-                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  v3.0 Enterprise
+                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30 hidden sm:inline-block">
+                  RadLex SR Standard
                 </span>
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 ${
                   reportStatus === "FINALIZED" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" : "bg-amber-500/20 text-amber-400 border border-amber-500/40"
@@ -302,64 +343,101 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
               </div>
               <p className="text-[11px] text-slate-400 font-medium flex items-center gap-2">
                 <span>Patient: <strong className="text-white">{study?.patient_name || "CHANDRASEKHAR^V"}</strong></span>
-                <span>• MRN: <strong className="text-cyan-400 font-mono">{study?.patient_mrn || "MRN-99812"}</strong></span>
+                <span className="hidden sm:inline">• MRN: <strong className="text-cyan-400 font-mono">{study?.patient_mrn || "MRN-99812"}</strong></span>
                 <span>• Modality: <strong className="text-purple-400">{study?.modality || "MR"}</strong></span>
               </p>
             </div>
           </div>
 
-          {/* Action Tools Header */}
-          <div className="flex items-center gap-2">
+          {/* Top Vendor Tools Header Actions */}
+          <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+            
+            {/* AUDIO DICTATION WAVEFORM BUTTON */}
             <button
-              onClick={handleCopyReport}
-              className="px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-              title="Copy Full Report Text"
+              onClick={() => setIsDictating(!isDictating)}
+              className={`min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 border transition-all cursor-pointer ${
+                isDictating 
+                  ? "bg-red-500/20 text-red-400 border-red-500/50 animate-pulse shadow-lg shadow-red-500/20" 
+                  : "bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700"
+              }`}
             >
-              {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-              <span>{copied ? "Copied!" : "Copy Text"}</span>
+              {isDictating ? <MicOff size={15} className="text-red-400" /> : <Mic size={15} className="text-cyan-400" />}
+              <span>{isDictating ? "Stop Voice Dictation" : "Start Voice Dictation"}</span>
+              {isDictating && (
+                <div className="flex items-center gap-0.5 ml-1">
+                  <span className="w-1 h-3 bg-red-400 animate-pulse"></span>
+                  <span className="w-1 h-4 bg-red-400 animate-pulse delay-75"></span>
+                  <span className="w-1 h-2 bg-red-400 animate-pulse delay-150"></span>
+                </div>
+              )}
+            </button>
+
+            {/* CRITICAL FINDINGS ESCALATION TOGGLE */}
+            <button
+              onClick={() => setIsCriticalAlert(!isCriticalAlert)}
+              className={`min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 border transition-all cursor-pointer ${
+                isCriticalAlert
+                  ? "bg-red-600 text-white border-red-500 shadow-md shadow-red-600/40"
+                  : "bg-slate-900 text-slate-400 border-slate-800 hover:border-red-500/40 hover:text-red-400"
+              }`}
+              title="Toggle Critical Value Escalation"
+            >
+              <AlertOctagon size={15} />
+              <span>{isCriticalAlert ? "Critical Value Flagged" : "Flag Critical Value"}</span>
+            </button>
+
+            {/* HISTORICAL PRIORS COMPARISON DRAWER */}
+            <button
+              onClick={() => setShowPriorsDrawer(!showPriorsDrawer)}
+              className="min-h-[38px] px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-purple-500/40 text-purple-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <History size={15} />
+              <span>Prior Studies ({HISTORICAL_PRIOR_STUDIES.length})</span>
             </button>
 
             <button
               onClick={() => setShowPdfPreview(!showPdfPreview)}
-              className="px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-cyan-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              className="min-h-[38px] px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-cyan-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
             >
-              <Eye size={14} />
-              <span>{showPdfPreview ? "Edit Mode" : "Live PDF Preview"}</span>
+              <Eye size={15} />
+              <span>{showPdfPreview ? "Editor View" : "Live PDF Preview"}</span>
             </button>
 
             <button
               onClick={() => window.print()}
-              className="px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-purple-500/50 text-purple-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              className="min-h-[38px] px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer hidden sm:flex"
             >
-              <Printer size={14} />
-              <span>Print PDF</span>
-            </button>
-
-            <button
-              onClick={() => handleSaveReport("DRAFT")}
-              disabled={isSaving}
-              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-            >
-              <Save size={14} />
-              <span>Save Draft</span>
+              <Printer size={15} />
+              <span>Print</span>
             </button>
 
             <button
               onClick={() => handleSaveReport("FINALIZED")}
               disabled={isSaving}
-              className="px-4 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
+              className="min-h-[38px] px-4 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
             >
-              <FileCheck size={14} />
+              <FileCheck size={15} />
               <span>Finalize & Sign</span>
             </button>
 
             {onClose && (
-              <button onClick={onClose} className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors ml-2 cursor-pointer">
+              <button onClick={onClose} className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors ml-1 cursor-pointer">
                 <X size={18} />
               </button>
             )}
           </div>
         </header>
+
+        {/* Critical Value STAT Escalation Banner */}
+        {isCriticalAlert && (
+          <div className="bg-red-600/90 text-white font-black text-xs py-2 px-4 flex items-center justify-between shadow-inner animate-pulse">
+            <div className="flex items-center gap-2">
+              <ShieldAlert size={16} />
+              <span>CRITICAL VALUE ESCALATION ACTIVE: Immediate Physician Notification Dispatch Enforced</span>
+            </div>
+            <span className="font-mono text-[10px] uppercase tracking-wider bg-black/40 px-2 py-0.5 rounded">STAT Level I</span>
+          </div>
+        )}
 
         {/* Toast Alert Banner */}
         {saveToast && (
@@ -369,21 +447,42 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
         )}
 
         {/* 🌟 MAIN STUDIO BODY */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           
           {/* ⬅️ LEFT COLUMN: TEMPLATES, KEY IMAGES & MACROS PALETTE */}
-          <div className="w-1/3 bg-slate-900/60 border-r border-slate-800 p-4 space-y-4 overflow-y-auto">
+          <div className="w-full lg:w-1/3 bg-slate-900/60 border-b lg:border-b-0 lg:border-r border-slate-800 p-3 md:p-4 space-y-4 overflow-y-auto">
             
+            {/* Historical Prior Scans Comparison Drawer */}
+            {showPriorsDrawer && (
+              <div className="bg-slate-950 p-4 rounded-2xl border border-purple-500/40 space-y-3 animate-in fade-in slide-in-from-top duration-200">
+                <div className="flex items-center justify-between text-xs font-extrabold text-purple-300 uppercase tracking-wider">
+                  <span className="flex items-center gap-1.5"><History size={15} /> Historical Prior Scans Comparison</span>
+                  <button onClick={() => setShowPriorsDrawer(false)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <div className="space-y-2">
+                  {HISTORICAL_PRIOR_STUDIES.map(p => (
+                    <div key={p.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-xs">
+                      <div className="flex items-center justify-between font-bold text-white">
+                        <span>{p.description}</span>
+                        <span className="text-[10px] font-mono text-purple-400">{p.date}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-snug">{p.result}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Structured Subspecialty Templates */}
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <div className="bg-slate-950 p-3.5 md:p-4 rounded-2xl border border-slate-800 space-y-3">
               <div className="text-xs font-extrabold text-cyan-400 uppercase tracking-wider flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
-                  <BookOpen size={15} /> Structured Templates
+                  <BookOpen size={15} /> Structured RadLex Templates
                 </span>
-                <span className="text-[10px] text-slate-500 font-mono">ICR / ACR Standard</span>
+                <span className="text-[10px] text-slate-500 font-mono">ACR Standard</span>
               </div>
 
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
                 {REPORT_TEMPLATES.map((tpl) => (
                   <div
                     key={tpl.id}
@@ -407,7 +506,7 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
             </div>
 
             {/* Attached DICOM Key Images Panel */}
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <div className="bg-slate-950 p-3.5 md:p-4 rounded-2xl border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
                   <Camera size={15} /> Key Image Snapshots ({attachedKeyImages.length})
@@ -456,9 +555,9 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
               </p>
               <button
                 onClick={handleAiAutoSummarize}
-                className="w-full py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-md shadow-purple-600/30 transition-all cursor-pointer"
+                className="w-full min-h-[44px] py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-md shadow-purple-600/30 transition-all cursor-pointer active:scale-95"
               >
-                <Zap size={14} className="text-amber-300" />
+                <Zap size={15} className="text-amber-300" />
                 <span>Auto-Generate AI Impression</span>
               </button>
             </div>
@@ -466,19 +565,19 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
           </div>
 
           {/* ➡️ RIGHT COLUMN: STRUCTURED REPORT EDITOR OR LIVE PDF PREVIEW */}
-          <div className="flex-1 bg-slate-950 p-6 overflow-y-auto">
+          <div className="flex-1 bg-slate-950 p-4 md:p-6 overflow-y-auto">
             {showPdfPreview ? (
-              /* LIVE PDF PREVIEW MODE */
-              <div className="max-w-3xl mx-auto bg-white text-slate-900 p-8 rounded-2xl shadow-2xl space-y-6 font-sans">
+              /* LIVE PDF PREVIEW MODE WITH QR CODE STAMP */
+              <div className="max-w-3xl mx-auto bg-white text-slate-900 p-6 md:p-8 rounded-2xl shadow-2xl space-y-6 font-sans">
                 {/* Print Letterhead */}
                 <div className="border-b-2 border-slate-900 pb-4 flex justify-between items-start">
                   <div>
-                    <h1 className="text-2xl font-black tracking-tight text-slate-900 font-heading">IPACX HEALTHCARE RADIOLOGY</h1>
+                    <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 font-heading">IPACX HEALTHCARE RADIOLOGY</h1>
                     <p className="text-xs text-slate-600 font-bold">DEPARTMENT OF DIAGNOSTIC & INTERVENTIONAL IMAGING</p>
                   </div>
                   <div className="text-right text-xs font-mono text-slate-600">
                     <div>Date: {study?.study_date || "2026-10-01"}</div>
-                    <div>Report Status: <strong className="text-emerald-700">{reportStatus}</strong></div>
+                    <div>Status: <strong className="text-emerald-700">{reportStatus}</strong></div>
                   </div>
                 </div>
 
@@ -513,11 +612,18 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
                   </div>
                 </div>
 
-                {/* Digital Signature Badge */}
+                {/* Digital Signature Badge & Interactive QR Stamp */}
                 <div className="pt-6 border-t-2 border-slate-900 flex justify-between items-end">
-                  <div className="text-[10px] text-slate-500 font-mono">
-                    Electronically verified & signed report. Valid for clinical decision support.
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-800">
+                      <QrCode size={40} />
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-mono">
+                      <div>Electronically verified report.</div>
+                      <div>Scan QR to verify on IPACX Portal.</div>
+                    </div>
                   </div>
+
                   <div className="text-right">
                     <div className="font-bold text-sm text-slate-900">Dr. Alexander Smith, MD</div>
                     <div className="text-xs text-slate-600">Senior Consultant Radiologist</div>
@@ -538,7 +644,7 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
                     type="text"
                     value={clinicalIndication}
                     onChange={(e) => setClinicalIndication(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-200 outline-none focus:border-cyan-500"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-200 outline-none focus:border-cyan-500 min-h-[44px]"
                   />
                 </div>
 
@@ -551,7 +657,7 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
                     type="text"
                     value={technique}
                     onChange={(e) => setTechnique(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-200 outline-none focus:border-cyan-500"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-200 outline-none focus:border-cyan-500 min-h-[44px]"
                   />
                 </div>
 
@@ -600,7 +706,7 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
                 </div>
 
                 {/* Radiologist Digital Signature Footer */}
-                <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 flex items-center justify-between gap-4">
+                <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                       <Award size={20} />
@@ -614,10 +720,10 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
                   <button
                     onClick={() => handleSaveReport("FINALIZED")}
                     disabled={isSaving}
-                    className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
+                    className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer active:scale-95"
                   >
                     <FileCheck size={16} />
-                    <span>Finalize Report</span>
+                    <span>Finalize & Sign Report</span>
                   </button>
                 </div>
 

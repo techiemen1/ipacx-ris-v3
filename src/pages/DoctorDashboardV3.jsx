@@ -263,19 +263,21 @@ const DoctorDashboardV3 = () => {
 
 
       {/* 🔍 WORKLIST FILTERS & SEARCH */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/40 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-xl">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/40 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-xl touch-manipulation">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
           {[
-            { id: "ALL", label: "All Worklist" },
+            { id: "ALL", label: "All Orders" },
             { id: "STAT", label: "🚨 STAT Emergency", count: telemetry.statEmergency },
             { id: "UNREPORTED", label: "Unreported", count: telemetry.pendingUnreported },
-            { id: "DRAFT", label: "Drafts" },
-            { id: "FINALIZED", label: "Finalized" }
+            { id: "SCHEDULED", label: "Scheduled (MWL)" },
+            { id: "DRAFT", label: "In-Reading / Drafts" },
+            { id: "FINALIZED", label: "Finalized" },
+            { id: "ADDENDUM", label: "Addendums" }
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setStatusTab(tab.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer active:scale-95 ${
                 statusTab === tab.id
                   ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
                   : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
