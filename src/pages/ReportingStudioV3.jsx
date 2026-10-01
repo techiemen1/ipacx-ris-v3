@@ -398,17 +398,17 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
       <div className="w-full h-full max-w-[1920px] max-h-[1080px] bg-slate-950 border border-slate-800 rounded-2xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
         
         {/* 🌟 TOP VENDOR REPORTING STUDIO HEADER (POWERSCRIBE 360 / SECTRA MODEL) */}
-        <header className="px-4 md:px-6 py-2.5 bg-slate-900/95 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <header className="px-4 md:px-6 py-2.5 bg-[#070D1B] border-b border-[#1E335B] flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-600 text-white shadow-md shadow-purple-600/30">
+            <div className="p-2 rounded-xl bg-orange-600 text-white shadow-md shadow-orange-600/30">
               <FileText size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-white text-sm md:text-base tracking-tight font-heading">
-                  PowerScribe Studio Pro
+                <h1 className="font-black text-amber-400 text-base md:text-lg tracking-tight font-heading drop-shadow">
+                  iPaCX Reporting Studio Pro
                 </h1>
-                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30 hidden sm:inline-block">
+                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-orange-500/20 text-orange-400 border border-orange-500/40 hidden sm:inline-block">
                   RadLex SR Standard
                 </span>
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 ${
@@ -418,10 +418,10 @@ Digitally Signed by Dr. Alexander Smith, MD (NMC-MH-2012-99812)`;
                   {reportStatus}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium flex items-center gap-2 flex-wrap">
+              <p className="text-[11px] text-slate-300 font-medium flex items-center gap-2 flex-wrap">
                 <span>Patient: <strong className="text-white">{study?.patient_name || "CHANDRASEKHAR^V"}</strong></span>
-                <span className="hidden sm:inline">• MRN: <strong className="text-cyan-400 font-mono">{study?.patient_mrn || study?.patient_id || "MRN-99812"}</strong></span>
-                <span>• Modality: <strong className="text-purple-400">{study?.modality || "MR"}</strong></span>
+                <span className="hidden sm:inline">• MRN: <strong className="text-orange-400 font-mono">{study?.patient_mrn || study?.patient_id || "MRN-99812"}</strong></span>
+                <span>• Modality: <strong className="text-amber-300">{study?.modality || "MR"}</strong></span>
                 <span>• ACC: <strong className="text-amber-400 font-mono">{study?.accession_no || study?.accession_number || study?.id || "ACC-1001"}</strong></span>
                 <span className="hidden md:inline">• Ref: <strong className="text-slate-200">{study?.referring_physician || "Self / Desk"}</strong></span>
               </p>

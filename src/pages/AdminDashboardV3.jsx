@@ -281,121 +281,32 @@ const AdminDashboardV3 = () => {
               </div>
             </div>
 
-            {/* 🎨 4-MODEL CLINICAL DESIGN SYSTEM PALETTE SELECTOR */}
+            {/* 🎨 UNIFIED MASTER CLINICAL THEME (NAVY BLUE, ORANGE & GOLD TITLES) */}
             <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-3">
-              <div className="text-xs font-extrabold text-slate-100 uppercase tracking-wider flex items-center justify-between">
+              <div className="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <Palette size={16} className="text-cyan-400" /> Executive Clinical Design System Models (Zero Eye Fatigue)
+                  <Palette size={16} className="text-orange-500" /> Unified Master Theme: Deep Navy Blue, Electric Orange & Light Gold Titles
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">IPACX V3 MASTER SPEC</span>
+                <span className="text-[10px] text-orange-400 font-mono font-bold bg-orange-950/60 px-2.5 py-0.5 rounded border border-orange-800">iPaCX GOLDEN FORMULA</span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {/* Theme 1: Deep Sapphire */}
-                <div
-                  onClick={() => {
-                    setHospitalConfig({ ...hospitalConfig, designModel: "DEEP_SAPPHIRE" });
-                    setDesignModel("DEEP_SAPPHIRE");
-                  }}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
-                    model === "DEEP_SAPPHIRE"
-                      ? "bg-[#14223A] border-cyan-400 ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-500/10"
-                      : "bg-[#14223A]/60 border-slate-800 hover:border-cyan-500/50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-xs text-white">1. Deep Sapphire</span>
-                    {model === "DEEP_SAPPHIRE" && <CheckCircle size={14} className="text-cyan-400" />}
-                  </div>
-                  <p className="text-[10px] text-slate-300 leading-snug">
-                    Executive midnight blue glassmorphism, crisp white titles, cyan accents. Plus Jakarta Sans typography.
+              <div className="p-4 rounded-xl bg-[#070D1B] border border-[#1E335B] flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h4 className="font-extrabold text-sm text-amber-400 font-heading flex items-center gap-2">
+                    <span>👑 iPaCX Clinical Navy & Orange Standard</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-orange-600 text-white font-black">ACTIVE</span>
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Designed for zero eye fatigue in reading rooms. Deep Navy Blue backdrop, Electric Orange highlights, Light Dark Yellow titles, and High-Contrast Crisp Black fonts for report printing & PDF exports.
                   </p>
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="w-4 h-4 rounded-full bg-[#0B132B] border border-slate-700" title="Canvas #0B132B"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#14223A] border border-slate-700" title="Card #14223A"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#38BDF8]" title="Sky Cyan #38BDF8"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#F8FAFC]" title="Text #F8FAFC"></span>
-                  </div>
                 </div>
 
-                {/* Theme 2: Emerald Sage */}
-                <div
-                  onClick={() => {
-                    setHospitalConfig({ ...hospitalConfig, designModel: "EMERALD_SAGE" });
-                    setDesignModel("EMERALD_SAGE");
-                  }}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
-                    model === "EMERALD_SAGE"
-                      ? "bg-[#0E2920] border-emerald-400 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10"
-                      : "bg-[#0E2920]/60 border-slate-800 hover:border-emerald-500/50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-xs text-white">2. Emerald Sage</span>
-                    {model === "EMERALD_SAGE" && <CheckCircle size={14} className="text-emerald-400" />}
-                  </div>
-                  <p className="text-[10px] text-slate-300 leading-snug">
-                    Bio-clinical forest sage glass, mint white typography, teal accents. Manrope typography.
-                  </p>
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="w-4 h-4 rounded-full bg-[#071913] border border-slate-700" title="Canvas #071913"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#0E2920] border border-slate-700" title="Card #0E2920"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#2DD4BF]" title="Mint Teal #2DD4BF"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#F0FDF4]" title="Text #F0FDF4"></span>
-                  </div>
-                </div>
-
-                {/* Theme 3: Velvet Obsidian */}
-                <div
-                  onClick={() => {
-                    setHospitalConfig({ ...hospitalConfig, designModel: "VELVET_OBSIDIAN" });
-                    setDesignModel("VELVET_OBSIDIAN");
-                  }}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
-                    model === "VELVET_OBSIDIAN"
-                      ? "bg-[#181B24] border-amber-400 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/10"
-                      : "bg-[#181B24]/60 border-slate-800 hover:border-amber-500/50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-xs text-white">3. Velvet Obsidian</span>
-                    {model === "VELVET_OBSIDIAN" && <CheckCircle size={14} className="text-amber-400" />}
-                  </div>
-                  <p className="text-[10px] text-slate-300 leading-snug">
-                    Luxury dark charcoal obsidian glass, warm white titles, amber gold accents. Inter typography.
-                  </p>
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="w-4 h-4 rounded-full bg-[#0F1117] border border-slate-700" title="Canvas #0F1117"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#181B24] border border-slate-700" title="Card #181B24"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#F59E0B]" title="Amber Gold #F59E0B"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#FAFAFA]" title="Text #FAFAFA"></span>
-                  </div>
-                </div>
-
-                {/* Theme 4: Warm Beige */}
-                <div
-                  onClick={() => {
-                    setHospitalConfig({ ...hospitalConfig, designModel: "WARM_BEIGE" });
-                    setDesignModel("WARM_BEIGE");
-                  }}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
-                    model === "WARM_BEIGE"
-                      ? "bg-[#F6F4F0] border-amber-600 ring-2 ring-amber-600/30 shadow-lg"
-                      : "bg-[#FAF8F4] border-slate-700 hover:border-amber-500/50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-xs text-slate-900">4. Warm Beige</span>
-                    {model === "WARM_BEIGE" && <CheckCircle size={14} className="text-amber-700" />}
-                  </div>
-                  <p className="text-[10px] text-slate-600 leading-snug">
-                    Warm linen light canvas with crisp white cards, dark slate text, zero glare. Plus Jakarta Sans font.
-                  </p>
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="w-4 h-4 rounded-full bg-[#F6F4F0] border border-amber-300" title="Canvas #F6F4F0"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#FFFFFF] border border-slate-300" title="Card #FFFFFF"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#D97706]" title="Warm Amber #D97706"></span>
-                    <span className="w-4 h-4 rounded-full bg-[#1E293B]" title="Text #1E293B"></span>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0F1A30] border border-[#1E335B] text-xs font-mono">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#070D1B] border border-slate-700" title="Deep Navy"></span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#F97316]" title="Electric Orange"></span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#FACC15]" title="Gold Title"></span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#000000] border border-slate-600" title="Black Print Font"></span>
                   </div>
                 </div>
               </div>

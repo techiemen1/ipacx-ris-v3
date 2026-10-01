@@ -4,7 +4,7 @@ export const getOhifViewerUrl = (studyOrUid) => {
   const host = typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost";
   const studyUid = typeof studyOrUid === "object" ? (studyOrUid?.study_uid || studyOrUid?.id || "") : (studyOrUid || "");
 
-  let template = "http://{host}:8042/ohif/viewer?StudyInstanceUIDs={studyUID}";
+  let template = "http://{host}:8043/ohif/viewer?StudyInstanceUIDs={studyUID}";
 
   try {
     const saved = localStorage.getItem("ipacx_hospital_config");

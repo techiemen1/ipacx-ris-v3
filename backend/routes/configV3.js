@@ -10,11 +10,11 @@ let hospitalConfig = {
   phone: "+91 (022) 2891-0000 | report@ipacx-imaging.com",
   gstin: "27AAAAA0000A1Z5",
   sacCode: "999312",
-  ohifViewerUrl: "http://localhost:8042/ohif/viewer?StudyInstanceUIDs={studyUID}",
-  weasisUrl: "weasis://$dicom:get -w http://localhost:8042/wado?requestType=WADO&studyUID={studyUID}",
+  ohifViewerUrl: "http://localhost:8043/ohif/viewer?StudyInstanceUIDs={studyUID}",
+  weasisUrl: "weasis://$dicom:get -w http://localhost:8043/wado?requestType=WADO&studyUID={studyUID}",
   horosUrl: "osirix://?methodName=DownloadURL&URL={wadoUrl}",
   preferredViewer: "50:50",
-  designModel: "DEEP_SAPPHIRE",
+  designModel: "NAVY_ORANGE",
   logoUrl: "",
   updatedAt: new Date().toISOString()
 };

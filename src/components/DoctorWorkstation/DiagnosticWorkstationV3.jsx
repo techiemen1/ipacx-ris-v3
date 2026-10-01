@@ -349,18 +349,18 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
         
         {/* Left Patient Identity Badge with Full DICOM Tags */}
         <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700/80 flex items-center gap-2 font-mono text-xs flex-wrap">
-            <span className="font-black text-white">{study?.patient_name || "PANCHAMI"}</span>
-            <span className="text-slate-400">{study?.patient_age || "20Y"} / {study?.patient_sex || "F"}</span>
-            <span className="text-cyan-400 font-bold">MRN: {study?.patient_mrn || study?.patient_id || "2956457"}</span>
-            <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">{study?.modality || "CT"}</span>
-            <span className="text-amber-400 font-bold">ACC: {study?.accession_no || study?.accession_number || study?.id || "31174"}</span>
-            <span className="text-purple-300 font-medium hidden md:inline">• Ref: {study?.referring_physician || "Self / Desk"}</span>
+          <div className="px-3 py-1.5 rounded-lg bg-[#070D1B] border border-[#1E335B] flex items-center gap-2 font-mono text-xs flex-wrap">
+            <span className="font-black text-amber-400 font-heading text-sm">{study?.patient_name || "PANCHAMI"}</span>
+            <span className="text-slate-300">{study?.patient_age || "20Y"} / {study?.patient_sex || "F"}</span>
+            <span className="text-orange-400 font-bold">MRN: {study?.patient_mrn || study?.patient_id || "2956457"}</span>
+            <span className="px-1.5 py-0.5 rounded bg-orange-600 text-white font-black text-[10px]">{study?.modality || "CT"}</span>
+            <span className="text-amber-300 font-bold">ACC: {study?.accession_no || study?.accession_number || study?.id || "31174"}</span>
+            <span className="text-slate-400 font-medium hidden md:inline">• Ref: {study?.referring_physician || "Self / Desk"}</span>
           </div>
 
           <button
             onClick={() => setShowDicomTagModal(true)}
-            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shrink-0"
+            className="px-2.5 py-1.5 bg-[#0F1A30] hover:bg-[#152442] text-amber-400 border border-amber-500/40 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shrink-0"
             title="Inspect All DICOM Headers & Tags"
           >
             <Tag size={13} /> DICOM Tags
@@ -368,27 +368,27 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
         </div>
 
         {/* Center 5 Layout View Mode Toggles */}
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+        <div className="flex items-center gap-1 bg-[#040812] p-1 rounded-xl border border-[#1E335B] text-xs">
           <button
             onClick={() => setLayoutMode("VIEWER_90")}
             className={`px-3 py-1 rounded-lg font-extrabold transition-all cursor-pointer ${
-              layoutMode === "VIEWER_90" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+              layoutMode === "VIEWER_90" ? "bg-orange-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
             }`}
           >
             90% Viewer
           </button>
           <button
             onClick={() => setLayoutMode("SPLIT")}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              layoutMode === "SPLIT" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "bg-slate-900/80 text-slate-300 border border-slate-800 hover:text-white"
+            className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              layoutMode === "SPLIT" ? "bg-orange-600 text-white shadow-md shadow-orange-600/30" : "bg-[#0A1224] text-slate-300 border border-[#1E335B] hover:text-white"
             }`}
           >
-            50/50 Split
+            ⚡ 50/50 Split
           </button>
           <button
             onClick={() => setLayoutMode("STUDIO_90")}
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              layoutMode === "STUDIO_90" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "bg-slate-900/80 text-slate-300 border border-slate-800 hover:text-white"
+              layoutMode === "STUDIO_90" ? "bg-orange-600 text-white shadow-md shadow-orange-600/30" : "bg-[#0A1224] text-slate-300 border border-[#1E335B] hover:text-white"
             }`}
           >
             90% Studio
@@ -396,7 +396,7 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
           <button
             onClick={() => setLayoutMode("VIEWER_ONLY")}
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              layoutMode === "VIEWER_ONLY" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "bg-slate-900/80 text-slate-300 border border-slate-800 hover:text-white"
+              layoutMode === "VIEWER_ONLY" ? "bg-orange-600 text-white shadow-md shadow-orange-600/30" : "bg-[#0A1224] text-slate-300 border border-[#1E335B] hover:text-white"
             }`}
           >
             Viewer Only
@@ -404,7 +404,7 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
           <button
             onClick={() => setLayoutMode("STUDIO_ONLY")}
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              layoutMode === "STUDIO_ONLY" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "bg-slate-900/80 text-slate-300 border border-slate-800 hover:text-white"
+              layoutMode === "STUDIO_ONLY" ? "bg-orange-600 text-white shadow-md shadow-orange-600/30" : "bg-[#0A1224] text-slate-300 border border-[#1E335B] hover:text-white"
             }`}
           >
             Studio Only
@@ -412,7 +412,7 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
           <button
             onClick={() => setLayoutMode("MPR_3D")}
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              layoutMode === "MPR_3D" ? "bg-purple-600 text-white shadow-md shadow-purple-600/30" : "bg-slate-900/80 text-purple-300 border border-purple-900/50 hover:text-white"
+              layoutMode === "MPR_3D" ? "bg-purple-600 text-white shadow-md shadow-purple-600/30" : "bg-[#0A1224] text-purple-300 border border-purple-900/50 hover:text-white"
             }`}
           >
             3D MPR
@@ -421,26 +421,26 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
             onClick={() => setViewerEngine(prev => prev === "OHIF_IFRAME" ? "CANVAS" : "OHIF_IFRAME")}
             className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all cursor-pointer border flex items-center gap-1.5 ${
               viewerEngine === "OHIF_IFRAME"
-                ? "bg-cyan-600 text-white border-cyan-400 shadow-md shadow-cyan-600/30"
-                : "bg-cyan-950/60 text-cyan-300 border-cyan-800/80 hover:bg-cyan-900/80"
+                ? "bg-amber-600 text-white border-amber-400 shadow-md shadow-amber-600/30"
+                : "bg-orange-950/60 text-orange-300 border-orange-800/80 hover:bg-orange-900/80"
             }`}
             title="Toggle Live Embedded OHIF Viewer in 50:50 Pane"
           >
-            <Zap size={13} /> {viewerEngine === "OHIF_IFRAME" ? "OHIF Active" : "OHIF Viewer"}
+            <Zap size={13} /> {viewerEngine === "OHIF_IFRAME" ? "OHIF Active" : "OHIF Engine"}
           </button>
         </div>
 
         {/* Right Top Action Buttons */}
         <div className="flex items-center gap-2">
           {toastMessage && (
-            <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-3 py-1 rounded-lg border border-emerald-800">
+            <span className="text-xs font-bold text-amber-300 bg-amber-950/90 px-3 py-1 rounded-lg border border-amber-700">
               {toastMessage}
             </span>
           )}
 
           <button
             onClick={captureKeyImage}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-extrabold flex items-center gap-1 cursor-pointer"
+            className="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-black flex items-center gap-1 cursor-pointer shadow-md shadow-orange-600/30"
           >
             <Camera size={13} /> Key Image
           </button>
