@@ -15,7 +15,7 @@ import PacsQueryRetrieveV3 from "./pages/PacsQueryRetrieveV3";
 import ReportsArchiveV3 from "./pages/ReportsArchiveV3";
 import ReportingStudioV3 from "./pages/ReportingStudioV3";
 import EnterpriseUnifiedRisStudioV3 from "./pages/EnterpriseUnifiedRisStudioV3";
-import { Activity, ShieldCheck, Smartphone, UserPlus, CreditCard, Radio, Users, LogIn, LogOut, User, PenTool, Database, FileCheck, Sun, Moon, Menu, X, LayoutGrid } from "lucide-react";
+import { Activity, ShieldCheck, Smartphone, UserPlus, CreditCard, Radio, Users, LogIn, LogOut, User, PenTool, Database, FileCheck, Sun, Moon, Menu, X, LayoutGrid, Palette } from "lucide-react";
 import { ThemeProvider, useTheme } from "./utils/ThemeContext";
 
 const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
@@ -176,24 +176,20 @@ const NavigationBar = ({ currentUser, onLogout, onOpenSignatureModal }) => {
           {/* 3-Model Palette Toggle */}
           <button
             onClick={cycleDesignModel}
-            title={`Active Design Model: ${model}. Click to cycle.`}
-            className={`min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer active:scale-95 ${
-              isLight
-                ? "bg-amber-500/10 text-amber-700 border-amber-300 hover:bg-amber-500/20"
-                : model === "PITCH_BLACK"
-                ? "bg-[#4FE3B5]/10 text-[#4FE3B5] border-[#4FE3B5]/30 hover:bg-[#4FE3B5]/20"
-                : "bg-cyan-500/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/30"
+            title={`Active Theme: ${model}. Click to cycle.`}
+            className={`min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer active:scale-95 ${
+              model === "WARM_BEIGE"
+                ? "bg-amber-100/80 text-amber-900 border-amber-300 hover:bg-amber-200"
+                : model === "LIGHT_GREEN"
+                ? "bg-emerald-100/80 text-emerald-900 border-emerald-300 hover:bg-emerald-200"
+                : "bg-sky-100/80 text-sky-900 border-sky-300 hover:bg-sky-200"
             }`}
           >
-            {isLight ? (
-              <Sun size={14} className="text-amber-600" />
-            ) : model === "PITCH_BLACK" ? (
-              <Moon size={14} className="text-[#4FE3B5]" />
-            ) : (
-              <Moon size={14} className="text-cyan-400" />
-            )}
-            <span className="hidden sm:inline">
-              {model === "PITCH_BLACK" ? "Pitch-Black" : model === "CLINICAL_LIGHT" ? "Clinical Light" : "Deep-Blue"}
+            <Palette size={15} className={
+              model === "WARM_BEIGE" ? "text-amber-700" : model === "LIGHT_GREEN" ? "text-emerald-700" : "text-sky-700"
+            } />
+            <span className="hidden sm:inline font-semibold">
+              {model === "WARM_BEIGE" ? "Warm Beige & Grey" : model === "LIGHT_GREEN" ? "Soft Sage & Green" : "Soft Sky & Blue"}
             </span>
           </button>
 
