@@ -1,10 +1,11 @@
 export const getOhifViewerUrl = (studyOrUid) => {
   const host = typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost";
+  const port = typeof window !== "undefined" && window.location.port ? window.location.port : "5000";
   const studyUid = typeof studyOrUid === "object"
     ? (studyOrUid?.study_uid || studyOrUid?.study_instance_uid || studyOrUid?.studyInstanceUid || studyOrUid?.id || studyOrUid?.accession_no || "")
     : (studyOrUid || "");
 
-  let template = "http://orthanc:orthanc@{host}:8043/ohif/viewer?StudyInstanceUIDs={studyUID}";
+  let template = "http://{host}:{port}/ohif/viewer?StudyInstanceUIDs={studyUID}";
 
   try {
     const saved = localStorage.getItem("ipacx_hospital_config");
@@ -25,6 +26,7 @@ export const getOhifViewerUrl = (studyOrUid) => {
       : `${url}?StudyInstanceUIDs=${encodeURIComponent(studyUid)}`;
   }
 
-  return url.replace(/{host}/g, host);
+  return url.replace(/{host}/g, host).replace(/{port}/g, port);
 };
+
 
