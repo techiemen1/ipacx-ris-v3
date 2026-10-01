@@ -33,7 +33,8 @@ import {
   Wand2,
   Copy,
   Check,
-  PenTool
+  PenTool,
+  ExternalLink
 } from "lucide-react";
 import api from "../../api/axios";
 import MobileMPRViewer from "../DICOMViewer/MobileMPRViewer";
@@ -338,6 +339,15 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
           >
             3D MPR
           </button>
+          <a
+            href={`http://${typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost"}:8043/ohif/viewer?StudyInstanceUIDs=${encodeURIComponent(study?.study_uid || study?.id || "")}`}
+            target="_blank"
+            rel="noreferrer"
+            className="px-2.5 py-1 rounded-lg font-extrabold transition-all bg-cyan-950 text-cyan-300 border border-cyan-800 hover:bg-cyan-900 text-xs flex items-center gap-1"
+            title="Launch Self-Hosted OHIF Viewer in New Tab"
+          >
+            <ExternalLink size={12} /> OHIF Viewer
+          </a>
         </div>
 
         {/* Right Top Action Buttons */}

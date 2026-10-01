@@ -195,7 +195,6 @@ const PacsQueryRetrieveV3 = () => {
 
     switch (activeViewer) {
       case "WEASIS":
-        // Weasis DICOM Viewer URL Protocol Scheme (Supports DCM4CHEE & Orthanc WADO-RS)
         return `weasis://$dicom:get -w "http://${host}:8042/wado?requestType=WADO&studyUID=${encUID}"`;
       case "OHIF":
         return `http://${host}:8043/ohif/viewer?StudyInstanceUIDs=${encUID}`;
@@ -203,7 +202,7 @@ const PacsQueryRetrieveV3 = () => {
         return `/v3/lite?study=${encUID}`;
       case "INTEGRATED":
       default:
-        return `/?study=${encUID}`;
+        return `/reporting-studio?study=${encUID}`;
     }
   };
 

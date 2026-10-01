@@ -57,31 +57,47 @@ const LoginV3 = ({ onLoginSuccess }) => {
       if (res?.data?.success && res?.data?.user) {
         authenticatedUser = res.data.user;
       } else {
-        // 2. Intelligent Auto Role Resolution Fallback
+        // 2. Lookup in Created Users Database (localStorage ipacx_users_db)
         const u = username.toLowerCase().trim();
-        let role = "RADIOLOGIST";
-        let fullName = "Dr. Alexander Smith, MD";
+        let matchedUser = null;
+        try {
+          const savedUsers = JSON.parse(localStorage.getItem("ipacx_users_db") || "[]");
+          matchedUser = savedUsers.find(usr => usr.username.toLowerCase() === u);
+        } catch (e) {}
 
-        if (u.includes("admin") || u.includes("sys")) {
-          role = "ADMIN";
-          fullName = "System Administrator";
-        } else if (u.includes("tech") || u.includes("rad")) {
-          role = "TECHNICIAN";
-          fullName = "Rajesh Kumar (Lead Tech)";
-        } else if (u.includes("cash") || u.includes("bill") || u.includes("desk")) {
-          role = "BILLING";
-          fullName = "Sunita Deshmukh (Billing)";
-        } else if (u.includes("hr") || u.includes("care")) {
-          role = "HR_MANAGER";
-          fullName = "Priya Nair (HR Manager)";
+        if (matchedUser) {
+          authenticatedUser = {
+            username: matchedUser.username,
+            role: matchedUser.role,
+            fullName: matchedUser.fullName,
+            medicalLicense: matchedUser.medicalLicense || "N/A"
+          };
+        } else {
+          // Fallback Intelligent Role Resolution
+          let role = "RADIOLOGIST";
+          let fullName = "Dr. Alexander Smith, MD";
+
+          if (u.includes("admin") || u.includes("sys") || u.includes("jags") || u.includes("boss")) {
+            role = "ADMIN";
+            fullName = `${username} (System Admin)`;
+          } else if (u.includes("tech") || u.includes("rad")) {
+            role = "TECHNICIAN";
+            fullName = `${username} (Lead Tech)`;
+          } else if (u.includes("cash") || u.includes("bill") || u.includes("desk")) {
+            role = "BILLING";
+            fullName = `${username} (Billing Executive)`;
+          } else if (u.includes("hr") || u.includes("care")) {
+            role = "HR_MANAGER";
+            fullName = `${username} (HR Manager)`;
+          }
+
+          authenticatedUser = {
+            username: username.trim(),
+            role,
+            fullName,
+            medicalLicense: role === "RADIOLOGIST" ? "NMC-MH-2012-08819" : "N/A"
+          };
         }
-
-        authenticatedUser = {
-          username: username.trim(),
-          role,
-          fullName,
-          medicalLicense: role === "RADIOLOGIST" ? "NMC-MH-2012-08819" : "N/A"
-        };
       }
 
       // Save user session & trigger callback
@@ -207,6 +223,33 @@ const LoginV3 = ({ onLoginSuccess }) => {
                 }`}
               />
               <Lock size={16} className={`absolute left-3.5 top-3.5 ${isLight ? "text-slate-400" : "text-slate-500"}`} />
+            </div>
+          </div>
+
+          {/* Quick Account Selector Pills */}
+          <div className="space-y-1.5 pt-1">
+            <label className="block font-extrabold uppercase text-[9px] text-slate-400">Quick Select User Account:</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { name: "jags", role: "ADMIN" },
+                { name: "sysadmin", role: "ADMIN" },
+                { name: "dr.smith", role: "RADIOLOGIST" },
+                { name: "rad.tech", role: "TECHNICIAN" },
+                { name: "hr.care", role: "HR_MANAGER" }
+              ].map((acc) => (
+                <button
+                  key={acc.name}
+                  type="button"
+                  onClick={() => setUsername(acc.name)}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                    username === acc.name
+                      ? "bg-cyan-600 text-white border-cyan-400"
+                      : isLight ? "bg-slate-100 border-slate-300 text-slate-700" : "bg-slate-950 border-slate-800 text-slate-300 hover:text-white"
+                  }`}
+                >
+                  {acc.name} <span className="text-[9px] opacity-75">[{acc.role}]</span>
+                </button>
+              ))}
             </div>
           </div>
 

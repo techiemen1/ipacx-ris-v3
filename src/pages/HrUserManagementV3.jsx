@@ -63,7 +63,17 @@ const INITIAL_USERS = [
 ];
 
 const HrUserManagementV3 = () => {
-  const [users, setUsers] = useState(INITIAL_USERS);
+  const [users, setUsers] = useState(() => {
+    const saved = localStorage.getItem("ipacx_users_db");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return INITIAL_USERS;
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [selectedUserForRbac, setSelectedUserForRbac] = useState(null);
@@ -108,7 +118,9 @@ const HrUserManagementV3 = () => {
       }
     };
 
-    setUsers([created, ...users]);
+    const updatedUsers = [created, ...users];
+    setUsers(updatedUsers);
+    localStorage.setItem("ipacx_users_db", JSON.stringify(updatedUsers));
     setShowCreateModal(false);
     setSuccessBanner(`✅ Employee ${created.fullName} onboarded with Role ${created.role}!`);
     setTimeout(() => setSuccessBanner(""), 4000);
