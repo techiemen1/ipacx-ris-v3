@@ -37,7 +37,8 @@ import {
   ExternalLink,
   Activity,
   Info,
-  Tag
+  Tag,
+  Plus
 } from "lucide-react";
 import api from "../../api/axios";
 import MobileMPRViewer from "../DICOMViewer/MobileMPRViewer";
@@ -114,13 +115,72 @@ const DOT_MACROS = [
   { label: ".dvt", text: "\nVENOUS DOPPLER: Fully compressible deep veins of lower extremity without luminal thrombus." }
 ];
 
-export default function DiagnosticWorkstationV3({ study, onClose, initialMode = "SPLIT" }) {
+export default function DiagnosticWorkstationV3({ study: propStudy, onClose, initialMode = "SPLIT" }) {
+  const [study, setStudy] = useState(propStudy || null);
+
+  // Auto-fetch study from URL parameters if not provided as prop
+  useEffect(() => {
+    if (!propStudy && typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const studyParam = params.get("study") || params.get("studyUID") || params.get("study_uid") || params.get("accession");
+
+      if (studyParam) {
+        api.get("/api/v3/pacs/studies").then(res => {
+          if (res?.data?.success && Array.isArray(res.data.studies)) {
+            const found = res.data.studies.find(s => s.study_uid === studyParam || s.id === studyParam || s.accession_no === studyParam);
+            if (found) {
+              setStudy(found);
+            } else {
+              setStudy({
+                id: studyParam,
+                study_uid: studyParam,
+                patient_name: "PACS PATIENT",
+                patient_mrn: "MRN-AUTO",
+                modality: "CT",
+                study_description: "DICOM EXAMINATION",
+                accession_no: "ACC-AUTO",
+                referring_physician: "Self / Desk"
+              });
+            }
+          }
+        }).catch(() => {
+          setStudy({
+            id: studyParam,
+            study_uid: studyParam,
+            patient_name: "PACS PATIENT",
+            patient_mrn: "MRN-AUTO",
+            modality: "CT",
+            study_description: "DICOM EXAMINATION",
+            accession_no: "ACC-AUTO",
+            referring_physician: "Self / Desk"
+          });
+        });
+      } else {
+        // Fallback default demo study if no param provided
+        setStudy({
+          id: "1.2.840.113619.2.55",
+          study_uid: "1.2.840.113619.2.55",
+          patient_name: "PANCHAMI^V",
+          patient_mrn: "MRN-994102",
+          patient_age: "24Y",
+          patient_sex: "F",
+          modality: "CT",
+          study_description: "CT BRAIN NON-CONTRAST",
+          accession_no: "ACC-31174",
+          referring_physician: "Dr. Sunita Rao"
+        });
+      }
+    } else if (propStudy) {
+      setStudy(propStudy);
+    }
+  }, [propStudy]);
+
   // 📐 LAYOUT VIEW MODES: "VIEWER_90" | "SPLIT" | "STUDIO_90" | "VIEWER_ONLY" | "STUDIO_ONLY" | "MPR_3D"
   const [layoutMode, setLayoutMode] = useState(
     initialMode === "MPR_3D" ? "MPR_3D" : "SPLIT"
   );
 
-  const [activeSeriesList] = useState([
+  const [activeSeriesList, setActiveSeriesList] = useState([
     { series_id: "ser_1", series_description: "Topogram 0.6", modality: study?.modality || "CT", total_slices: 1, instances: [] },
     { series_id: "ser_2", series_description: "Brain 1.0 H20s", modality: study?.modality || "CT", total_slices: 223, instances: [] },
     { series_id: "ser_3", series_description: "Brain 1.0 H70s", modality: study?.modality || "CT", total_slices: 223, instances: [] }
@@ -133,8 +193,8 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
   const [contrast, setContrast] = useState(1.0);
 
   // REPORTING STUDIO STATES
-  const [reportHeading, setReportHeading] = useState(study?.modality === "CT" ? "CT HEAD REPORT" : "RADIOLOGY DIAGNOSTIC REPORT");
-  const [clinicalIndication, setClinicalIndication] = useState(study?.study_description || "Acute neurological deficit / cephalea.");
+  const [reportHeading, setReportHeading] = useState("RADIOLOGY DIAGNOSTIC REPORT");
+  const [clinicalIndication, setClinicalIndication] = useState("Acute neurological deficit / cephalea.");
   const [techniqueText, setTechniqueText] = useState(REPORT_TEMPLATES[0].technique);
   const [findingsText, setFindingsText] = useState(REPORT_TEMPLATES[0].findings);
   const [impressionText, setImpressionText] = useState(REPORT_TEMPLATES[0].impression);
@@ -146,7 +206,24 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
   const [showDicomTagModal, setShowDicomTagModal] = useState(false);
   const fileInputRef = useRef(null);
 
-  const currentSeries = activeSeriesList[activeSeriesIndex] || activeSeriesList[0];
+  // Update report heading when study modality changes
+  useEffect(() => {
+    if (study) {
+      setReportHeading(study.modality === "CT" ? "CT HEAD REPORT" : `${study.modality || "RADIOLOGY"} DIAGNOSTIC REPORT`);
+      setClinicalIndication(study.study_description || "Acute neurological deficit / cephalea.");
+      if (Array.isArray(study.series_list) && study.series_list.length > 0) {
+        setActiveSeriesList(study.series_list);
+      }
+    }
+  }, [study]);
+
+  const currentSeries = activeSeriesList?.[activeSeriesIndex] || activeSeriesList?.[0] || {
+    series_id: "ser_1",
+    series_description: "Axial View",
+    modality: study?.modality || "CT",
+    total_slices: 223,
+    instances: []
+  };
 
   // Helper: Generate SVG DICOM Overlay Snapshot Data URL
   const generateDicomOverlaySvg = (seriesDesc, sliceNum, totalSlices) => {
@@ -467,7 +544,7 @@ export default function DiagnosticWorkstationV3({ study, onClose, initialMode = 
           </button>
 
           <button
-            onClick={onClose}
+            onClick={() => onClose ? onClose() : window.history.back()}
             className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-extrabold flex items-center gap-1 cursor-pointer"
           >
             <X size={14} /> Close

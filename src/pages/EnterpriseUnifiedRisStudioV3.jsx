@@ -902,8 +902,14 @@ export default function EnterpriseUnifiedRisStudioV3({ userPersona = "RADIOLOGIS
                   </div>
 
                   <button
-                    onClick={() => { setWorkstationMode("SPLIT"); setShowWorkstation(true); }}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                    onClick={() => { 
+                      if (!selectedStudy && Array.isArray(filteredStudies) && filteredStudies.length > 0) {
+                        setSelectedStudy(filteredStudies[0]);
+                      }
+                      setWorkstationMode("SPLIT"); 
+                      setShowWorkstation(true); 
+                    }}
+                    className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-md shadow-orange-600/30"
                   >
                     <Split size={14} /> Open Fullscreen 50:50 Studio
                   </button>
@@ -1101,7 +1107,7 @@ export default function EnterpriseUnifiedRisStudioV3({ userPersona = "RADIOLOGIS
       </div>
 
       {/* 🌟 MODALS INTERACTION */}
-      {showWorkstation && selectedStudy && (
+      {showWorkstation && (
         <DiagnosticWorkstationV3
           study={selectedStudy}
           initialMode={workstationMode}
@@ -1109,7 +1115,7 @@ export default function EnterpriseUnifiedRisStudioV3({ userPersona = "RADIOLOGIS
         />
       )}
 
-      {showReportingStudio && selectedStudy && (
+      {showReportingStudio && (
         <ReportingStudioV3
           study={selectedStudy}
           onClose={() => setShowReportingStudio(false)}

@@ -203,7 +203,7 @@ const PacsQueryRetrieveV3 = () => {
         return `/v3/lite?study=${encUID}`;
       case "INTEGRATED":
       default:
-        return `/reporting-studio?study=${encUID}`;
+        return `/workstation?study=${encUID}`;
     }
   };
 

@@ -594,7 +594,7 @@ const DoctorDashboardV3 = () => {
       )}
 
       {/* 🌟 50:50 MULTILAYERED DIAGNOSTIC WORKSTATION MODAL */}
-      {showWorkstation && selectedStudy && (
+      {showWorkstation && (
         <DiagnosticWorkstationV3
           study={selectedStudy}
           initialMode={workstationMode}
@@ -603,7 +603,7 @@ const DoctorDashboardV3 = () => {
       )}
 
       {/* 🌟 STANDALONE RADIOLOGY REPORTING STUDIO MODAL */}
-      {showReportingStudio && selectedStudy && (
+      {showReportingStudio && (
         <ReportingStudioV3
           study={selectedStudy}
           onClose={() => setShowReportingStudio(false)}
